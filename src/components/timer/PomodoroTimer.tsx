@@ -12,7 +12,7 @@ interface PomodoroTimerProps {
 }
 
 export function PomodoroTimer({ pomodoroMinutes, activeTodo, onPomodoroComplete }: PomodoroTimerProps) {
-  const { status, minutes, seconds, progress, start, pause, reset } = useTimer(pomodoroMinutes);
+  const { status, minutes, seconds, progress, start, pause, reset } = useTimer(pomodoroMinutes, activeTodo?.id ?? null);
 
   useEffect(() => {
     if (status === "completed") {

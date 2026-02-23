@@ -20,10 +20,19 @@ export interface UserSettings {
   pomodoroMinutes: number;
 }
 
+export interface TimerState {
+  status: "running" | "paused";
+  endTime?: number;
+  remainingMs?: number;
+  pomodoroMinutes: number;
+  activeTodoId: string | null;
+}
+
 const KEYS = {
   todos: "eisenmate_todos",
   settings: "eisenmate_settings",
   sessions: "eisenmate_sessions",
+  timer: "eisenmate_timer",
 } as const;
 
 function read<T>(key: string, fallback: T): T {
@@ -66,4 +75,16 @@ export function getSessions(): Session[] {
 
 export function saveSessions(sessions: Session[]): void {
   write(KEYS.sessions, sessions);
+}
+
+export function getTimerState(): TimerState | null {
+  return read<TimerState | null>(KEYS.timer, null);
+}
+
+export function saveTimerState(state: TimerState): void {
+  write(KEYS.timer, state);
+}
+
+export function clearTimerState(): void {
+  localStorage.removeItem(KEYS.timer);
 }

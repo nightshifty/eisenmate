@@ -1,4 +1,4 @@
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect, useRef } from "react";
 import { Navbar } from "@/components/layout/Navbar";
 import { PomodoroTimer } from "@/components/timer/PomodoroTimer";
 import { TodoPanel } from "@/components/todos/TodoPanel";
@@ -6,6 +6,7 @@ import { useTodos, type Todo } from "@/hooks/useTodos";
 import { useUserSettings } from "@/hooks/useUserSettings";
 import { useSessions } from "@/hooks/useSessions";
 import { useTheme } from "@/hooks/useTheme";
+import { getTimerState } from "@/lib/storage";
 
 export function HomePage() {
   const { todos, loading: todosLoading, addTodo, deleteTodo, trackTime, toggleDone } = useTodos();
@@ -13,6 +14,18 @@ export function HomePage() {
   const { sessions, todaySessions, todayMinutes, addSession } = useSessions();
   const { theme, toggleTheme } = useTheme();
   const [activeTodo, setActiveTodo] = useState<Todo | null>(null);
+
+  // Restore active todo from persisted timer state (once, when todos are available)
+  const restoredTodoRef = useRef(false);
+  useEffect(() => {
+    if (restoredTodoRef.current || todos.length === 0) return;
+    const saved = getTimerState();
+    if (saved?.activeTodoId) {
+      const found = todos.find((t) => t.id === saved.activeTodoId);
+      if (found) setActiveTodo(found);
+    }
+    restoredTodoRef.current = true;
+  }, [todos]);
 
   const handleSelectTodo = (todo: Todo) => {
     setActiveTodo((prev) => (prev?.id === todo.id ? null : todo));
