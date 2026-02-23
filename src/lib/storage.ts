@@ -1,0 +1,69 @@
+export interface Todo {
+  id: string;
+  content: string;
+  estimationMinutes: number;
+  timeSpentMinutes: number;
+  done: boolean;
+  createdAt: string;
+  completedAt: string | null;
+}
+
+export interface Session {
+  id: string;
+  todoId: string | null;
+  todoContent: string;
+  durationMinutes: number;
+  completedAt: string;
+}
+
+export interface UserSettings {
+  pomodoroMinutes: number;
+}
+
+const KEYS = {
+  todos: "eisenmate_todos",
+  settings: "eisenmate_settings",
+  sessions: "eisenmate_sessions",
+} as const;
+
+function read<T>(key: string, fallback: T): T {
+  try {
+    const raw = localStorage.getItem(key);
+    if (raw === null) return fallback;
+    return JSON.parse(raw) as T;
+  } catch {
+    return fallback;
+  }
+}
+
+function write<T>(key: string, value: T): void {
+  localStorage.setItem(key, JSON.stringify(value));
+}
+
+export function generateId(): string {
+  return crypto.randomUUID();
+}
+
+export function getTodos(): Todo[] {
+  return read<Todo[]>(KEYS.todos, []);
+}
+
+export function saveTodos(todos: Todo[]): void {
+  write(KEYS.todos, todos);
+}
+
+export function getSettings(): UserSettings {
+  return read<UserSettings>(KEYS.settings, { pomodoroMinutes: 25 });
+}
+
+export function saveSettings(settings: UserSettings): void {
+  write(KEYS.settings, settings);
+}
+
+export function getSessions(): Session[] {
+  return read<Session[]>(KEYS.sessions, []);
+}
+
+export function saveSessions(sessions: Session[]): void {
+  write(KEYS.sessions, sessions);
+}
