@@ -1,5 +1,6 @@
 import { useState, useRef, useCallback, useEffect } from "react";
 import { getTimerState, saveTimerState, clearTimerState } from "@/lib/storage";
+import { playCompletionChime } from "@/lib/chime";
 
 export type TimerStatus = "idle" | "running" | "paused" | "completed";
 
@@ -55,7 +56,7 @@ export function useTimer(defaultMinutes: number, activeTodoId: string | null = n
       setStatus("completed");
       if (intervalRef.current) clearInterval(intervalRef.current);
       clearTimerState();
-      new Audio(import.meta.env.BASE_URL + "beep_beep.mp3").play().catch(() => {});
+      playCompletionChime();
       if (Notification.permission === "granted") {
         new Notification("Pomodoro fertig!", { body: "Zeit für eine Pause." });
       }
@@ -112,7 +113,7 @@ export function useTimer(defaultMinutes: number, activeTodoId: string | null = n
         intervalRef.current = window.setInterval(tick, 250);
       } else {
         clearTimerState();
-        new Audio(import.meta.env.BASE_URL + "beep_beep.mp3").play().catch(() => {});
+        playCompletionChime();
         if (Notification.permission === "granted") {
           new Notification("Pomodoro fertig!", { body: "Zeit für eine Pause." });
         }
