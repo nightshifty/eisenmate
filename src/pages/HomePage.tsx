@@ -1,11 +1,8 @@
 import { useState, useCallback } from "react";
-import { Navbar } from "@/components/layout/Navbar";
 import { PomodoroTimer } from "@/components/timer/PomodoroTimer";
 import { TodoPanel } from "@/components/todos/TodoPanel";
-import { useTodos, type Todo } from "@/hooks/useTodos";
-import { useUserSettings } from "@/hooks/useUserSettings";
-import { useSessions } from "@/hooks/useSessions";
-import { useTheme } from "@/hooks/useTheme";
+import type { Todo } from "@/hooks/useTodos";
+import type { EisenhowerQuadrant } from "@/lib/storage";
 import { getTimerState, getTodos } from "@/lib/storage";
 import type { TimerStatus } from "@/hooks/useTimer";
 
@@ -17,13 +14,39 @@ function getRestoredTodo(): Todo | null {
   return getTodos().find((t) => t.id === saved.activeTodoId) ?? null;
 }
 
-export function HomePage() {
-  const { todos, loading: todosLoading, addTodo, deleteTodo, trackTime, toggleDone } = useTodos();
-  const { pomodoroMinutes, breakMinutes, overtimeMaxMinutes, overtimeChimeIntervalMinutes, allowEarlyFinish, updateSettings } = useUserSettings();
-  const { sessions, todaySessions, todayMinutes, addSession, deleteSession, clearSessions } = useSessions();
-  const { theme, toggleTheme } = useTheme();
+interface HomePageProps {
+  todos: Todo[];
+  todosLoading: boolean;
+  addTodo: (content: string, estimationMinutes: number, quadrant?: EisenhowerQuadrant | null) => void;
+  deleteTodo: (todoId: string) => void;
+  trackTime: (todoId: string, minutes: number) => void;
+  toggleDone: (todoId: string, done: boolean) => void;
+  pomodoroMinutes: number;
+  breakMinutes: number;
+  overtimeMaxMinutes: number;
+  overtimeChimeIntervalMinutes: number;
+  allowEarlyFinish: boolean;
+  addSession: (session: { todoId: string | null; todoContent: string; durationMinutes: number; completedAt: string }) => void;
+  onTimerRunningChange: (running: boolean) => void;
+}
+
+export function HomePage({
+  todos,
+  todosLoading,
+  addTodo,
+  deleteTodo,
+  trackTime,
+  toggleDone,
+  pomodoroMinutes,
+  breakMinutes,
+  overtimeMaxMinutes,
+  overtimeChimeIntervalMinutes,
+  allowEarlyFinish,
+  addSession,
+  onTimerRunningChange,
+}: HomePageProps) {
   const [activeTodo, setActiveTodo] = useState<Todo | null>(getRestoredTodo);
-  const [timerStatus, setTimerStatus] = useState<CombinedTimerStatus>("idle");
+  const [, setTimerStatus] = useState<CombinedTimerStatus>("idle");
 
   const handleSelectTodo = (todo: Todo) => {
     setActiveTodo((prev) => (prev?.id === todo.id ? null : todo));
@@ -61,45 +84,35 @@ export function HomePage() {
     }
   }, [activeTodo, trackTime]);
 
+  const handleStatusChange = useCallback((status: CombinedTimerStatus) => {
+    setTimerStatus(status);
+    onTimerRunningChange(status !== "idle" && status !== "completed");
+  }, [onTimerRunningChange]);
+
   return (
-    <div className="min-h-screen flex flex-col">
-      <Navbar
-        settings={{ pomodoroMinutes, breakMinutes, overtimeMaxMinutes, overtimeChimeIntervalMinutes, allowEarlyFinish }}
-        onSaveSettings={updateSettings}
-        timerRunning={timerStatus !== "idle" && timerStatus !== "completed"}
-        sessions={sessions}
-        todaySessions={todaySessions}
-        todayMinutes={todayMinutes}
-        onDeleteSession={deleteSession}
-        onClearSessions={clearSessions}
-        theme={theme}
-        onToggleTheme={toggleTheme}
+    <main className="flex-1 flex flex-col items-center justify-center gap-8 px-4 py-8">
+      <PomodoroTimer
+        pomodoroMinutes={pomodoroMinutes}
+        breakMinutes={breakMinutes}
+        overtimeMaxMinutes={overtimeMaxMinutes}
+        overtimeChimeIntervalMinutes={overtimeChimeIntervalMinutes}
+        allowEarlyFinish={allowEarlyFinish}
+        activeTodo={activeTodo}
+        onPomodoroComplete={handlePomodoroComplete}
+        onEarlyFinish={handleEarlyFinish}
+        onOvertimeStop={handleOvertimeStop}
+        onStatusChange={handleStatusChange}
       />
 
-      <main className="flex-1 flex flex-col items-center justify-center gap-8 px-4 py-8">
-        <PomodoroTimer
-          pomodoroMinutes={pomodoroMinutes}
-          breakMinutes={breakMinutes}
-          overtimeMaxMinutes={overtimeMaxMinutes}
-          overtimeChimeIntervalMinutes={overtimeChimeIntervalMinutes}
-          allowEarlyFinish={allowEarlyFinish}
-          activeTodo={activeTodo}
-          onPomodoroComplete={handlePomodoroComplete}
-          onEarlyFinish={handleEarlyFinish}
-          onOvertimeStop={handleOvertimeStop}
-          onStatusChange={setTimerStatus}
-        />
-
-        <TodoPanel
-          todos={todos}
-          loading={todosLoading}
-          activeTodoId={activeTodo?.id ?? null}
-          onSelect={handleSelectTodo}
-          onAdd={addTodo}
-          onDelete={deleteTodo}
-          onToggleDone={toggleDone}
-        />
-      </main>
-    </div>
+      <TodoPanel
+        todos={todos}
+        loading={todosLoading}
+        activeTodoId={activeTodo?.id ?? null}
+        onSelect={handleSelectTodo}
+        onAdd={addTodo}
+        onDelete={deleteTodo}
+        onToggleDone={toggleDone}
+      />
+    </main>
   );
 }

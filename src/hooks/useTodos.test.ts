@@ -70,4 +70,41 @@ describe("useTodos", () => {
     expect(result.current.todos[0].done).toBe(false);
     expect(result.current.todos[0].completedAt).toBeNull();
   });
+
+  it("adds a todo with default quadrant null", () => {
+    const { result } = renderHook(() => useTodos());
+    act(() => result.current.addTodo("Unsorted task", 25));
+    expect(result.current.todos[0].quadrant).toBeNull();
+  });
+
+  it("adds a todo with a specific quadrant", () => {
+    const { result } = renderHook(() => useTodos());
+    act(() => result.current.addTodo("Urgent task", 25, "urgent-important"));
+    expect(result.current.todos[0].quadrant).toBe("urgent-important");
+  });
+
+  it("updates a todo content and quadrant", () => {
+    const { result } = renderHook(() => useTodos());
+    act(() => result.current.addTodo("Original", 25));
+    const id = result.current.todos[0].id;
+
+    act(() => result.current.updateTodo(id, { content: "Updated", quadrant: "not-urgent-important" }));
+    expect(result.current.todos[0].content).toBe("Updated");
+    expect(result.current.todos[0].quadrant).toBe("not-urgent-important");
+    // estimation unchanged
+    expect(result.current.todos[0].estimationMinutes).toBe(25);
+    // persisted
+    expect(getTodos()[0].content).toBe("Updated");
+  });
+
+  it("updates only estimation without changing other fields", () => {
+    const { result } = renderHook(() => useTodos());
+    act(() => result.current.addTodo("Task", 25, "urgent-important"));
+    const id = result.current.todos[0].id;
+
+    act(() => result.current.updateTodo(id, { estimationMinutes: 45 }));
+    expect(result.current.todos[0].estimationMinutes).toBe(45);
+    expect(result.current.todos[0].content).toBe("Task");
+    expect(result.current.todos[0].quadrant).toBe("urgent-important");
+  });
 });

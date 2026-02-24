@@ -9,10 +9,14 @@ import { TimerSettings } from "@/components/timer/TimerSettings";
 import { AboutPomodoro } from "@/components/help/AboutPomodoro";
 import { HowToUse } from "@/components/help/HowToUse";
 import { SessionHistory } from "@/components/sessions/SessionHistory";
-import { HelpCircle, History, Sun, Moon } from "lucide-react";
+import { HelpCircle, History, Sun, Moon, Timer, LayoutGrid } from "lucide-react";
 import type { Session, UserSettings } from "@/lib/storage";
+import type { Page } from "@/App";
+import { cn } from "@/lib/utils";
 
 interface NavbarProps {
+  activePage: Page;
+  onPageChange: (page: Page) => void;
   settings: {
     pomodoroMinutes: number;
     breakMinutes: number;
@@ -31,11 +35,53 @@ interface NavbarProps {
   onToggleTheme: () => void;
 }
 
-export function Navbar({ settings, onSaveSettings, timerRunning, sessions, todaySessions, todayMinutes, onDeleteSession, onClearSessions, theme, onToggleTheme }: NavbarProps) {
+export function Navbar({
+  activePage,
+  onPageChange,
+  settings,
+  onSaveSettings,
+  timerRunning,
+  sessions,
+  todaySessions,
+  todayMinutes,
+  onDeleteSession,
+  onClearSessions,
+  theme,
+  onToggleTheme,
+}: NavbarProps) {
   return (
     <nav className="border-b bg-card">
-      <div className="max-w-2xl mx-auto flex items-center justify-between px-4 h-14">
-        <span className="text-xl font-bold text-primary">Eisenmate</span>
+      <div className="max-w-5xl mx-auto flex items-center justify-between px-4 h-14">
+        <div className="flex items-center gap-4">
+          <span className="text-xl font-bold text-primary">Eisenmate</span>
+
+          <div className="flex items-center gap-1 ml-2">
+            <Button
+              variant="ghost"
+              size="sm"
+              className={cn(
+                "gap-1.5 text-sm",
+                activePage === "pomodoro" && "bg-accent text-accent-foreground",
+              )}
+              onClick={() => onPageChange("pomodoro")}
+            >
+              <Timer className="h-4 w-4" />
+              Pomodoro
+            </Button>
+            <Button
+              variant="ghost"
+              size="sm"
+              className={cn(
+                "gap-1.5 text-sm",
+                activePage === "eisenhower" && "bg-accent text-accent-foreground",
+              )}
+              onClick={() => onPageChange("eisenhower")}
+            >
+              <LayoutGrid className="h-4 w-4" />
+              Aufgaben
+            </Button>
+          </div>
+        </div>
 
         <div className="flex items-center gap-1">
           <TimerSettings

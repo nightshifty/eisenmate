@@ -1,3 +1,9 @@
+export type EisenhowerQuadrant =
+  | "urgent-important"
+  | "not-urgent-important"
+  | "urgent-not-important"
+  | "not-urgent-not-important";
+
 export interface Todo {
   id: string;
   content: string;
@@ -6,6 +12,7 @@ export interface Todo {
   done: boolean;
   createdAt: string;
   completedAt: string | null;
+  quadrant: EisenhowerQuadrant | null;
 }
 
 export interface Session {
@@ -59,7 +66,11 @@ export function generateId(): string {
 }
 
 export function getTodos(): Todo[] {
-  return read<Todo[]>(KEYS.todos, []);
+  const todos = read<Todo[]>(KEYS.todos, []);
+  return todos.map((t) => ({
+    ...t,
+    quadrant: t.quadrant ?? null,
+  }));
 }
 
 export function saveTodos(todos: Todo[]): void {

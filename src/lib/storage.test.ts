@@ -47,10 +47,28 @@ describe("todos storage", () => {
         done: false,
         createdAt: "2025-01-01T00:00:00.000Z",
         completedAt: null,
+        quadrant: null,
       },
     ];
     saveTodos(todos);
     expect(getTodos()).toEqual(todos);
+  });
+
+  it("migrates old todos without quadrant field", () => {
+    const oldTodos = [
+      {
+        id: "1",
+        content: "Old task",
+        estimationMinutes: 25,
+        timeSpentMinutes: 0,
+        done: false,
+        createdAt: "2025-01-01T00:00:00.000Z",
+        completedAt: null,
+      },
+    ];
+    localStorage.setItem("eisenmate_todos", JSON.stringify(oldTodos));
+    const result = getTodos();
+    expect(result[0].quadrant).toBeNull();
   });
 
   it("returns fallback on corrupted data", () => {
