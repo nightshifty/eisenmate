@@ -83,7 +83,7 @@ export function PomodoroTimer({
   };
 
   return (
-    <div className="flex flex-col items-center gap-6">
+    <div className="flex flex-col items-center gap-4 sm:gap-6">
       <TimerCircle progress={progress} minutes={minutes} seconds={seconds} isOvertime={isOvertime} />
 
       {activeTodo && (
