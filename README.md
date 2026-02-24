@@ -1,41 +1,90 @@
 # Eisenmate
 
-Pomodoro-Timer mit integrierter Todo-Liste. Läuft komplett im Browser — kein Backend, kein Login. Alle Daten werden lokal im Browser (localStorage) gespeichert.
+**[English](#english) | [Deutsch](#deutsch)**
 
-## Features
+> **[Live Demo: nightshifty.github.io/EisenMate](https://nightshifty.github.io/EisenMate/)**
 
-- Pomodoro-Timer mit einstellbarer Dauer
-- Todo-Liste mit Zeitschätzung und Zeiterfassung
-- Aufgabe auswählen und Timer starten — die Zeit wird automatisch getrackt
-- Session-Verlauf: abgeschlossene Pomodoros pro Tag einsehen
-- Akustisches Signal und Browser-Notification bei Ablauf
-- Responsive UI mit shadcn/ui
+---
 
-## Tech-Stack
+## English
+
+Pomodoro timer with an integrated todo list. Runs entirely in the browser -- no backend, no login required. All data is stored locally in the browser (localStorage).
+
+### Features
+
+- Pomodoro timer with adjustable duration
+- Todo list with time estimation and time tracking
+- Select a task and start the timer -- time is tracked automatically
+- Session history: view completed pomodoros per day
+- Audio signal and browser notification when the timer ends
+- Responsive UI built with shadcn/ui
+
+### Tech Stack
 
 - React 19 + TypeScript
 - Vite
 - Tailwind CSS + shadcn/ui
-- localStorage für Persistenz
-- GitHub Pages für Hosting
+- localStorage for persistence
+- GitHub Pages for hosting
 
-## Lokal starten
+### Run locally
 
 ```bash
-# Repository klonen
-git clone https://github.com/<user>/eisenmate.git
+git clone https://github.com/nightshifty/eisenmate.git
 cd eisenmate
-
-# Dependencies installieren
 npm install
-
-# Dev-Server starten
 npm run dev
 ```
 
-Die App läuft dann unter `http://localhost:5173`.
+The app will be available at `http://localhost:5173`.
 
-## Build
+### Build
+
+```bash
+npm run build
+```
+
+Output goes to `dist/` and can be served by any static web server.
+
+### Deployment
+
+On every push to `main`, the app is automatically deployed to GitHub Pages via GitHub Actions.
+
+---
+
+## Deutsch
+
+Pomodoro-Timer mit integrierter Todo-Liste. Laeuft komplett im Browser -- kein Backend, kein Login. Alle Daten werden lokal im Browser (localStorage) gespeichert.
+
+### Features
+
+- Pomodoro-Timer mit einstellbarer Dauer
+- Todo-Liste mit Zeitschaetzung und Zeiterfassung
+- Aufgabe auswaehlen und Timer starten -- die Zeit wird automatisch getrackt
+- Session-Verlauf: abgeschlossene Pomodoros pro Tag einsehen
+- Akustisches Signal und Browser-Notification bei Ablauf
+- Responsive UI mit shadcn/ui
+
+### Tech-Stack
+
+- React 19 + TypeScript
+- Vite
+- Tailwind CSS + shadcn/ui
+- localStorage fuer Persistenz
+- GitHub Pages fuer Hosting
+
+### Lokal starten
+
+```bash
+git clone https://github.com/nightshifty/eisenmate.git
+cd eisenmate
+npm install
+npm run dev
+```
+
+Die App laeuft dann unter `http://localhost:5173`.
+
+### Build
 
 ```bash
 npm run build
@@ -43,6 +92,6 @@ npm run build
 
 Der Output landet in `dist/` und kann von jedem statischen Webserver ausgeliefert werden.
 
-## Deployment
+### Deployment
 
 Bei jedem Push auf `main` wird die App automatisch via GitHub Actions auf GitHub Pages deployt.
