@@ -18,12 +18,15 @@ export interface Session {
 
 export interface UserSettings {
   pomodoroMinutes: number;
+  breakMinutes: number;
   overtimeMaxMinutes: number;
   overtimeChimeIntervalMinutes: number;
+  allowEarlyFinish: boolean;
 }
 
 export interface TimerState {
   status: "running" | "paused";
+  phase?: "pomodoro" | "break";
   endTime?: number;
   remainingMs?: number;
   pomodoroMinutes: number;
@@ -65,8 +68,10 @@ export function saveTodos(todos: Todo[]): void {
 
 const DEFAULT_SETTINGS: UserSettings = {
   pomodoroMinutes: 25,
+  breakMinutes: 5,
   overtimeMaxMinutes: 90,
   overtimeChimeIntervalMinutes: 5,
+  allowEarlyFinish: true,
 };
 
 export function getSettings(): UserSettings {

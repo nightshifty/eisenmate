@@ -15,8 +15,10 @@ import type { Session, UserSettings } from "@/lib/storage";
 interface NavbarProps {
   settings: {
     pomodoroMinutes: number;
+    breakMinutes: number;
     overtimeMaxMinutes: number;
     overtimeChimeIntervalMinutes: number;
+    allowEarlyFinish: boolean;
   };
   onSaveSettings: (patch: Partial<UserSettings>) => void;
   timerRunning: boolean;

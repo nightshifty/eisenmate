@@ -9,6 +9,8 @@ import { useTheme } from "@/hooks/useTheme";
 import { getTimerState, getTodos } from "@/lib/storage";
 import type { TimerStatus } from "@/hooks/useTimer";
 
+type CombinedTimerStatus = TimerStatus | "break";
+
 function getRestoredTodo(): Todo | null {
   const saved = getTimerState();
   if (!saved?.activeTodoId) return null;
@@ -17,11 +19,11 @@ function getRestoredTodo(): Todo | null {
 
 export function HomePage() {
   const { todos, loading: todosLoading, addTodo, deleteTodo, trackTime, toggleDone } = useTodos();
-  const { pomodoroMinutes, overtimeMaxMinutes, overtimeChimeIntervalMinutes, updateSettings } = useUserSettings();
+  const { pomodoroMinutes, breakMinutes, overtimeMaxMinutes, overtimeChimeIntervalMinutes, allowEarlyFinish, updateSettings } = useUserSettings();
   const { sessions, todaySessions, todayMinutes, addSession, deleteSession, clearSessions } = useSessions();
   const { theme, toggleTheme } = useTheme();
   const [activeTodo, setActiveTodo] = useState<Todo | null>(getRestoredTodo);
-  const [timerStatus, setTimerStatus] = useState<TimerStatus>("idle");
+  const [timerStatus, setTimerStatus] = useState<CombinedTimerStatus>("idle");
 
   const handleSelectTodo = (todo: Todo) => {
     setActiveTodo((prev) => (prev?.id === todo.id ? null : todo));
@@ -40,6 +42,19 @@ export function HomePage() {
     });
   }, [activeTodo, pomodoroMinutes, trackTime, addSession]);
 
+  const handleEarlyFinish = useCallback((elapsedMinutes: number) => {
+    if (activeTodo && elapsedMinutes > 0) {
+      trackTime(activeTodo.id, elapsedMinutes);
+    }
+
+    addSession({
+      todoId: activeTodo?.id ?? null,
+      todoContent: activeTodo?.content ?? "Kein Todo",
+      durationMinutes: elapsedMinutes,
+      completedAt: new Date().toISOString(),
+    });
+  }, [activeTodo, trackTime, addSession]);
+
   const handleOvertimeStop = useCallback((overtimeMinutes: number) => {
     if (activeTodo && overtimeMinutes > 0) {
       trackTime(activeTodo.id, overtimeMinutes);
@@ -49,9 +64,9 @@ export function HomePage() {
   return (
     <div className="min-h-screen flex flex-col">
       <Navbar
-        settings={{ pomodoroMinutes, overtimeMaxMinutes, overtimeChimeIntervalMinutes }}
+        settings={{ pomodoroMinutes, breakMinutes, overtimeMaxMinutes, overtimeChimeIntervalMinutes, allowEarlyFinish }}
         onSaveSettings={updateSettings}
-        timerRunning={timerStatus === "running" || timerStatus === "paused" || timerStatus === "overtime"}
+        timerRunning={timerStatus !== "idle" && timerStatus !== "completed"}
         sessions={sessions}
         todaySessions={todaySessions}
         todayMinutes={todayMinutes}
@@ -64,10 +79,13 @@ export function HomePage() {
       <main className="flex-1 flex flex-col items-center justify-center gap-8 px-4 py-8">
         <PomodoroTimer
           pomodoroMinutes={pomodoroMinutes}
+          breakMinutes={breakMinutes}
           overtimeMaxMinutes={overtimeMaxMinutes}
           overtimeChimeIntervalMinutes={overtimeChimeIntervalMinutes}
+          allowEarlyFinish={allowEarlyFinish}
           activeTodo={activeTodo}
           onPomodoroComplete={handlePomodoroComplete}
+          onEarlyFinish={handleEarlyFinish}
           onOvertimeStop={handleOvertimeStop}
           onStatusChange={setTimerStatus}
         />

@@ -14,8 +14,10 @@ export function useUserSettings() {
 
   return {
     pomodoroMinutes: settings.pomodoroMinutes,
+    breakMinutes: settings.breakMinutes,
     overtimeMaxMinutes: settings.overtimeMaxMinutes,
     overtimeChimeIntervalMinutes: settings.overtimeChimeIntervalMinutes,
+    allowEarlyFinish: settings.allowEarlyFinish,
     updateSettings,
   };
 }

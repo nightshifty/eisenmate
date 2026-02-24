@@ -63,17 +63,21 @@ describe("settings storage", () => {
   it("returns default settings when nothing saved", () => {
     expect(getSettings()).toEqual({
       pomodoroMinutes: 25,
+      breakMinutes: 5,
       overtimeMaxMinutes: 90,
       overtimeChimeIntervalMinutes: 5,
+      allowEarlyFinish: true,
     });
   });
 
   it("round-trips settings", () => {
-    saveSettings({ pomodoroMinutes: 45, overtimeMaxMinutes: 60, overtimeChimeIntervalMinutes: 10 });
+    saveSettings({ pomodoroMinutes: 45, breakMinutes: 10, overtimeMaxMinutes: 60, overtimeChimeIntervalMinutes: 10, allowEarlyFinish: false });
     expect(getSettings()).toEqual({
       pomodoroMinutes: 45,
+      breakMinutes: 10,
       overtimeMaxMinutes: 60,
       overtimeChimeIntervalMinutes: 10,
+      allowEarlyFinish: false,
     });
   });
 
@@ -82,8 +86,10 @@ describe("settings storage", () => {
     localStorage.setItem("eisenmate_settings", JSON.stringify({ pomodoroMinutes: 30 }));
     expect(getSettings()).toEqual({
       pomodoroMinutes: 30,
+      breakMinutes: 5,
       overtimeMaxMinutes: 90,
       overtimeChimeIntervalMinutes: 5,
+      allowEarlyFinish: true,
     });
   });
 });

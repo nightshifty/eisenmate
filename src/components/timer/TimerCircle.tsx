@@ -1,14 +1,29 @@
+export type TimerVariant = "pomodoro" | "break" | "overtime";
+
 interface TimerCircleProps {
   progress: number;
   minutes: number;
   seconds: number;
-  isOvertime?: boolean;
+  variant?: TimerVariant;
 }
 
-export function TimerCircle({ progress, minutes, seconds, isOvertime }: TimerCircleProps) {
+const strokeColors: Record<TimerVariant, string> = {
+  pomodoro: "var(--primary)",
+  break: "var(--break)",
+  overtime: "var(--destructive)",
+};
+
+const textClasses: Record<TimerVariant, string> = {
+  pomodoro: "text-foreground",
+  break: "text-break",
+  overtime: "text-destructive",
+};
+
+export function TimerCircle({ progress, minutes, seconds, variant = "pomodoro" }: TimerCircleProps) {
   const radius = 90;
   const circumference = 2 * Math.PI * radius;
   const offset = circumference - (progress / 100) * circumference;
+  const isOvertime = variant === "overtime";
 
   return (
     <div className="relative w-[60vw] max-w-56 sm:max-w-88 md:max-w-104 lg:max-w-md aspect-square">
@@ -25,7 +40,7 @@ export function TimerCircle({ progress, minutes, seconds, isOvertime }: TimerCir
           cx="110"
           cy="110"
           r={radius}
-          stroke={isOvertime ? "var(--destructive)" : "var(--primary)"}
+          stroke={strokeColors[variant]}
           strokeWidth="6"
           fill="none"
           strokeLinecap="round"
@@ -35,7 +50,7 @@ export function TimerCircle({ progress, minutes, seconds, isOvertime }: TimerCir
         />
       </svg>
       <div className="absolute inset-0 flex items-center justify-center">
-        <span className={`text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-mono font-bold ${isOvertime ? "text-destructive" : "text-foreground"}`}>
+        <span className={`text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-mono font-bold ${textClasses[variant]}`}>
           {isOvertime ? "-" : ""}{String(minutes).padStart(2, "0")}:{String(seconds).padStart(2, "0")}
         </span>
       </div>

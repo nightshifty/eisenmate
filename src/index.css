@@ -36,6 +36,8 @@
   --color-chart-3: var(--chart-3);
   --color-chart-4: var(--chart-4);
   --color-chart-5: var(--chart-5);
+  --color-break: var(--break);
+  --color-break-foreground: var(--break-foreground);
   --color-sidebar: var(--sidebar);
   --color-sidebar-foreground: var(--sidebar-foreground);
   --color-sidebar-primary: var(--sidebar-primary);
@@ -67,6 +69,8 @@
   --border: #E2E8F0;
   --input: #E2E8F0;
   --ring: #E53E3E;
+  --break: #38A169;
+  --break-foreground: #FFFFFF;
   --chart-1: #E53E3E;
   --chart-2: #38A169;
   --chart-3: #3182CE;
@@ -102,6 +106,8 @@
   --border: #4A5568;
   --input: #4A5568;
   --ring: #FC8181;
+  --break: #68D391;
+  --break-foreground: #1A202C;
   --chart-1: #FC8181;
   --chart-2: #68D391;
   --chart-3: #63B3ED;
