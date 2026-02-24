@@ -56,14 +56,7 @@ export function HomePage({
     if (activeTodo) {
       trackTime(activeTodo.id, pomodoroMinutes);
     }
-
-    addSession({
-      todoId: activeTodo?.id ?? null,
-      todoContent: activeTodo?.content ?? "Kein Todo",
-      durationMinutes: pomodoroMinutes,
-      completedAt: new Date().toISOString(),
-    });
-  }, [activeTodo, pomodoroMinutes, trackTime, addSession]);
+  }, [activeTodo, pomodoroMinutes, trackTime]);
 
   const handleEarlyFinish = useCallback((elapsedMinutes: number) => {
     if (activeTodo && elapsedMinutes > 0) {
@@ -82,7 +75,14 @@ export function HomePage({
     if (activeTodo && overtimeMinutes > 0) {
       trackTime(activeTodo.id, overtimeMinutes);
     }
-  }, [activeTodo, trackTime]);
+
+    addSession({
+      todoId: activeTodo?.id ?? null,
+      todoContent: activeTodo?.content ?? "Kein Todo",
+      durationMinutes: pomodoroMinutes + overtimeMinutes,
+      completedAt: new Date().toISOString(),
+    });
+  }, [activeTodo, pomodoroMinutes, trackTime, addSession]);
 
   const handleStatusChange = useCallback((status: CombinedTimerStatus) => {
     setTimerStatus(status);

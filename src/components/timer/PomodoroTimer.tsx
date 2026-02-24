@@ -94,9 +94,7 @@ export function PomodoroTimer({
     // Transition into completed from overtime -> auto-stop overtime, then start break
     if (pomodoro.status === "completed" && prev === "overtime") {
       const overtimeMinutes = Math.floor(pomodoro.overtimeMs / 60000);
-      if (overtimeMinutes > 0) {
-        onOvertimeStopRef.current(overtimeMinutes);
-      }
+      onOvertimeStopRef.current(overtimeMinutes);
       // Auto-transition to break
       pomodoro.reset();
       setPhase("break");
@@ -140,13 +138,12 @@ export function PomodoroTimer({
     // If resetting from overtime, book the overtime duration first
     if (pomodoro.status === "overtime") {
       const overtimeMinutes = Math.floor(pomodoro.overtimeMs / 60000);
-      if (overtimeMinutes > 0) {
-        onOvertimeStopRef.current(overtimeMinutes);
-      }
+      onOvertimeStopRef.current(overtimeMinutes);
     }
+    const wasOvertime = pomodoro.status === "overtime";
     pomodoro.reset();
     // After manual stop in overtime, transition to break
-    if (pomodoro.status === "overtime") {
+    if (wasOvertime) {
       setPhase("break");
     }
   };
