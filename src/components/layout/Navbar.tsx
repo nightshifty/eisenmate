@@ -10,11 +10,15 @@ import { AboutPomodoro } from "@/components/help/AboutPomodoro";
 import { HowToUse } from "@/components/help/HowToUse";
 import { SessionHistory } from "@/components/sessions/SessionHistory";
 import { HelpCircle, History, Sun, Moon } from "lucide-react";
-import type { Session } from "@/lib/storage";
+import type { Session, UserSettings } from "@/lib/storage";
 
 interface NavbarProps {
-  pomodoroMinutes: number;
-  onSaveMinutes: (minutes: number) => void;
+  settings: {
+    pomodoroMinutes: number;
+    overtimeMaxMinutes: number;
+    overtimeChimeIntervalMinutes: number;
+  };
+  onSaveSettings: (patch: Partial<UserSettings>) => void;
   timerRunning: boolean;
   sessions: Session[];
   todaySessions: number;
@@ -25,7 +29,7 @@ interface NavbarProps {
   onToggleTheme: () => void;
 }
 
-export function Navbar({ pomodoroMinutes, onSaveMinutes, timerRunning, sessions, todaySessions, todayMinutes, onDeleteSession, onClearSessions, theme, onToggleTheme }: NavbarProps) {
+export function Navbar({ settings, onSaveSettings, timerRunning, sessions, todaySessions, todayMinutes, onDeleteSession, onClearSessions, theme, onToggleTheme }: NavbarProps) {
   return (
     <nav className="border-b bg-card">
       <div className="max-w-2xl mx-auto flex items-center justify-between px-4 h-14">
@@ -33,8 +37,8 @@ export function Navbar({ pomodoroMinutes, onSaveMinutes, timerRunning, sessions,
 
         <div className="flex items-center gap-1">
           <TimerSettings
-            currentMinutes={pomodoroMinutes}
-            onSave={onSaveMinutes}
+            currentSettings={settings}
+            onSave={onSaveSettings}
             disabled={timerRunning}
           />
 

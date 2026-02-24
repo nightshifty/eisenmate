@@ -2,9 +2,10 @@ interface TimerCircleProps {
   progress: number;
   minutes: number;
   seconds: number;
+  isOvertime?: boolean;
 }
 
-export function TimerCircle({ progress, minutes, seconds }: TimerCircleProps) {
+export function TimerCircle({ progress, minutes, seconds, isOvertime }: TimerCircleProps) {
   const radius = 90;
   const circumference = 2 * Math.PI * radius;
   const offset = circumference - (progress / 100) * circumference;
@@ -24,7 +25,7 @@ export function TimerCircle({ progress, minutes, seconds }: TimerCircleProps) {
           cx="110"
           cy="110"
           r={radius}
-          stroke="var(--primary)"
+          stroke={isOvertime ? "var(--destructive)" : "var(--primary)"}
           strokeWidth="8"
           fill="none"
           strokeLinecap="round"
@@ -34,8 +35,8 @@ export function TimerCircle({ progress, minutes, seconds }: TimerCircleProps) {
         />
       </svg>
       <div className="absolute inset-0 flex items-center justify-center">
-        <span className="text-4xl font-mono font-bold text-foreground">
-          {String(minutes).padStart(2, "0")}:{String(seconds).padStart(2, "0")}
+        <span className={`text-4xl font-mono font-bold ${isOvertime ? "text-destructive" : "text-foreground"}`}>
+          {isOvertime ? "-" : ""}{String(minutes).padStart(2, "0")}:{String(seconds).padStart(2, "0")}
         </span>
       </div>
     </div>

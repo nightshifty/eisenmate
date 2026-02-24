@@ -1,15 +1,21 @@
-import { useState } from "react";
-import { getSettings, saveSettings } from "@/lib/storage";
+import { useState, useCallback } from "react";
+import { getSettings, saveSettings, type UserSettings } from "@/lib/storage";
 
 export function useUserSettings() {
-  const [pomodoroMinutes, setPomodoroMinutes] = useState(
-    () => getSettings().pomodoroMinutes,
-  );
+  const [settings, setSettings] = useState<UserSettings>(getSettings);
 
-  const updatePomodoroMinutes = (minutes: number) => {
-    saveSettings({ pomodoroMinutes: minutes });
-    setPomodoroMinutes(minutes);
+  const updateSettings = useCallback((patch: Partial<UserSettings>) => {
+    setSettings((prev) => {
+      const next = { ...prev, ...patch };
+      saveSettings(next);
+      return next;
+    });
+  }, []);
+
+  return {
+    pomodoroMinutes: settings.pomodoroMinutes,
+    overtimeMaxMinutes: settings.overtimeMaxMinutes,
+    overtimeChimeIntervalMinutes: settings.overtimeChimeIntervalMinutes,
+    updateSettings,
   };
-
-  return { pomodoroMinutes, loading: false, updatePomodoroMinutes };
 }

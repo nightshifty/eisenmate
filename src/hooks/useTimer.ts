@@ -2,14 +2,30 @@ import { useState, useRef, useCallback, useEffect } from "react";
 import { getTimerState, saveTimerState, clearTimerState } from "@/lib/storage";
 import { playCompletionChime } from "@/lib/chime";
 
-export type TimerStatus = "idle" | "running" | "paused" | "completed";
+export type TimerStatus = "idle" | "running" | "paused" | "overtime" | "completed";
 
-export function useTimer(defaultMinutes: number, activeTodoId: string | null = null) {
+interface UseTimerOptions {
+  defaultMinutes: number;
+  activeTodoId?: string | null;
+  overtimeMaxMinutes?: number;
+  overtimeChimeIntervalMinutes?: number;
+}
+
+export function useTimer({
+  defaultMinutes,
+  activeTodoId = null,
+  overtimeMaxMinutes = 90,
+  overtimeChimeIntervalMinutes = 5,
+}: UseTimerOptions) {
   // Refs for latest values — avoids stale closures in callbacks
   const activeTodoIdRef = useRef(activeTodoId);
   activeTodoIdRef.current = activeTodoId;
   const defaultMinutesRef = useRef(defaultMinutes);
   defaultMinutesRef.current = defaultMinutes;
+  const overtimeMaxMsRef = useRef(overtimeMaxMinutes * 60 * 1000);
+  overtimeMaxMsRef.current = overtimeMaxMinutes * 60 * 1000;
+  const overtimeChimeMsRef = useRef(overtimeChimeIntervalMinutes * 60 * 1000);
+  overtimeChimeMsRef.current = overtimeChimeIntervalMinutes * 60 * 1000;
 
   // Read saved state once (lazy initializer only runs on first render)
   const [restored] = useState(() => getTimerState());
@@ -17,7 +33,12 @@ export function useTimer(defaultMinutes: number, activeTodoId: string | null = n
   const [status, setStatus] = useState<TimerStatus>(() => {
     if (!restored) return "idle";
     if (restored.status === "running" && restored.endTime != null) {
-      return restored.endTime - Date.now() > 0 ? "running" : "completed";
+      const remaining = restored.endTime - Date.now();
+      if (remaining > 0) return "running";
+      // Timer expired while away — check if within overtime limit
+      const overtimeElapsed = -remaining;
+      if (overtimeElapsed < overtimeMaxMinutes * 60 * 1000) return "overtime";
+      return "completed";
     }
     if (restored.status === "paused") return "paused";
     return "idle";
@@ -26,8 +47,7 @@ export function useTimer(defaultMinutes: number, activeTodoId: string | null = n
   const [remainingMs, setRemainingMs] = useState(() => {
     if (!restored) return defaultMinutes * 60 * 1000;
     if (restored.status === "running" && restored.endTime != null) {
-      const r = restored.endTime - Date.now();
-      return r > 0 ? r : 0;
+      return restored.endTime - Date.now(); // can be negative (overtime)
     }
     if (restored.status === "paused" && restored.remainingMs != null) {
       return restored.remainingMs;
@@ -36,37 +56,76 @@ export function useTimer(defaultMinutes: number, activeTodoId: string | null = n
   });
 
   const endTimeRef = useRef<number | null>(
-    restored?.status === "running" && restored?.endTime != null && restored.endTime - Date.now() > 0
+    restored?.status === "running" && restored?.endTime != null
       ? restored.endTime
       : null,
   );
   const intervalRef = useRef<number | null>(null);
 
+  // Track the last chime time to know when to play the next periodic chime
+  const lastChimeAtMsRef = useRef<number | null>(null);
+  // Track whether the initial completion (0-crossing) has been handled
+  const completionFiredRef = useRef(false);
+
+  // On restore: if already in overtime, mark completion as already fired
+  useEffect(() => {
+    if (status === "overtime") {
+      completionFiredRef.current = true;
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   useEffect(() => {
     if (status === "idle") {
       setRemainingMs(defaultMinutes * 60 * 1000);
+      completionFiredRef.current = false;
+      lastChimeAtMsRef.current = null;
     }
   }, [defaultMinutes, status]);
 
   const tick = useCallback(() => {
     if (endTimeRef.current === null) return;
     const remaining = endTimeRef.current - Date.now();
+    setRemainingMs(remaining);
+
     if (remaining <= 0) {
-      setRemainingMs(0);
-      setStatus("completed");
-      if (intervalRef.current) clearInterval(intervalRef.current);
-      clearTimerState();
-      playCompletionChime();
-      if (Notification.permission === "granted") {
-        new Notification("Pomodoro fertig!", { body: "Zeit für eine Pause." });
+      const overtimeElapsed = -remaining; // positive ms of overtime
+
+      // First time crossing zero
+      if (!completionFiredRef.current) {
+        completionFiredRef.current = true;
+        lastChimeAtMsRef.current = 0;
+        setStatus("overtime");
+        playCompletionChime();
+        if (Notification.permission === "granted") {
+          new Notification("Pomodoro fertig!", { body: "Overtime läuft — Zeit für eine Pause." });
+        }
+        return;
       }
-    } else {
-      setRemainingMs(remaining);
+
+      // Check overtime limit
+      if (overtimeElapsed >= overtimeMaxMsRef.current) {
+        setStatus("completed");
+        if (intervalRef.current) clearInterval(intervalRef.current);
+        clearTimerState();
+        playCompletionChime();
+        if (Notification.permission === "granted") {
+          new Notification("Overtime beendet!", { body: "Maximale Overtime erreicht." });
+        }
+        return;
+      }
+
+      // Periodic chime
+      const lastChime = lastChimeAtMsRef.current ?? 0;
+      if (overtimeChimeMsRef.current > 0 && overtimeElapsed - lastChime >= overtimeChimeMsRef.current) {
+        lastChimeAtMsRef.current = overtimeElapsed;
+        playCompletionChime();
+      }
     }
   }, []);
 
   const start = useCallback(() => {
-    if (status === "completed") return;
+    if (status === "completed" || status === "overtime") return;
     const endTime = Date.now() + remainingMs;
     endTimeRef.current = endTime;
     setStatus("running");
@@ -80,6 +139,7 @@ export function useTimer(defaultMinutes: number, activeTodoId: string | null = n
   }, [remainingMs, tick, status]);
 
   const pause = useCallback(() => {
+    if (status === "overtime") return; // no pause in overtime
     if (intervalRef.current) clearInterval(intervalRef.current);
     const currentRemaining = endTimeRef.current != null
       ? Math.max(0, endTimeRef.current - Date.now())
@@ -93,7 +153,7 @@ export function useTimer(defaultMinutes: number, activeTodoId: string | null = n
       pomodoroMinutes: defaultMinutesRef.current,
       activeTodoId: activeTodoIdRef.current,
     });
-  }, []);
+  }, [status]);
 
   const reset = useCallback(
     (minutes?: number) => {
@@ -101,21 +161,30 @@ export function useTimer(defaultMinutes: number, activeTodoId: string | null = n
       setRemainingMs((minutes ?? defaultMinutes) * 60 * 1000);
       setStatus("idle");
       endTimeRef.current = null;
+      completionFiredRef.current = false;
+      lastChimeAtMsRef.current = null;
       clearTimerState();
     },
     [defaultMinutes],
   );
 
-  // Auto-start interval on mount if restored as running, or handle expired timer
+  // Auto-start interval on mount if restored as running/overtime, or handle expired timer
   useEffect(() => {
     if (restored?.status === "running" && restored?.endTime != null) {
-      if (restored.endTime - Date.now() > 0) {
+      const remaining = restored.endTime - Date.now();
+      if (remaining > 0 || (remaining <= 0 && -remaining < overtimeMaxMinutes * 60 * 1000)) {
+        // Still running or within overtime — start interval
         intervalRef.current = window.setInterval(tick, 250);
+        if (remaining <= 0) {
+          // Already in overtime on mount
+          completionFiredRef.current = true;
+        }
       } else {
+        // Exceeded overtime limit while away
         clearTimerState();
         playCompletionChime();
         if (Notification.permission === "granted") {
-          new Notification("Pomodoro fertig!", { body: "Zeit für eine Pause." });
+          new Notification("Overtime beendet!", { body: "Maximale Overtime erreicht." });
         }
       }
     }
@@ -135,7 +204,7 @@ export function useTimer(defaultMinutes: number, activeTodoId: string | null = n
       isFirstRender.current = false;
       return;
     }
-    if (status === "running" && endTimeRef.current != null) {
+    if ((status === "running" || status === "overtime") && endTimeRef.current != null) {
       saveTimerState({
         status: "running",
         endTime: endTimeRef.current,
@@ -154,9 +223,27 @@ export function useTimer(defaultMinutes: number, activeTodoId: string | null = n
   }, [activeTodoId]);
 
   const totalMs = defaultMinutes * 60 * 1000;
-  const progress = totalMs > 0 ? ((totalMs - remainingMs) / totalMs) * 100 : 0;
-  const minutes = Math.floor(remainingMs / 60000);
-  const seconds = Math.floor((remainingMs % 60000) / 1000);
+  const progress = totalMs > 0 ? Math.min(100, ((totalMs - remainingMs) / totalMs) * 100) : 0;
 
-  return { status, minutes, seconds, remainingMs, progress, start, pause, reset };
+  // For display: if overtime, show negative time
+  const isOvertime = remainingMs < 0;
+  const absMs = Math.abs(remainingMs);
+  const displayMinutes = Math.floor(absMs / 60000);
+  const displaySeconds = Math.floor((absMs % 60000) / 1000);
+
+  // How much overtime has elapsed (0 if not in overtime)
+  const overtimeMs = remainingMs < 0 ? -remainingMs : 0;
+
+  return {
+    status,
+    minutes: displayMinutes,
+    seconds: displaySeconds,
+    isOvertime,
+    overtimeMs,
+    remainingMs,
+    progress,
+    start,
+    pause,
+    reset,
+  };
 }

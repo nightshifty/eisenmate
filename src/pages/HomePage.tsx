@@ -17,7 +17,7 @@ function getRestoredTodo(): Todo | null {
 
 export function HomePage() {
   const { todos, loading: todosLoading, addTodo, deleteTodo, trackTime, toggleDone } = useTodos();
-  const { pomodoroMinutes, updatePomodoroMinutes } = useUserSettings();
+  const { pomodoroMinutes, overtimeMaxMinutes, overtimeChimeIntervalMinutes, updateSettings } = useUserSettings();
   const { sessions, todaySessions, todayMinutes, addSession, deleteSession, clearSessions } = useSessions();
   const { theme, toggleTheme } = useTheme();
   const [activeTodo, setActiveTodo] = useState<Todo | null>(getRestoredTodo);
@@ -40,12 +40,18 @@ export function HomePage() {
     });
   }, [activeTodo, pomodoroMinutes, trackTime, addSession]);
 
+  const handleOvertimeStop = useCallback((overtimeMinutes: number) => {
+    if (activeTodo && overtimeMinutes > 0) {
+      trackTime(activeTodo.id, overtimeMinutes);
+    }
+  }, [activeTodo, trackTime]);
+
   return (
     <div className="min-h-screen flex flex-col">
       <Navbar
-        pomodoroMinutes={pomodoroMinutes}
-        onSaveMinutes={updatePomodoroMinutes}
-        timerRunning={timerStatus === "running" || timerStatus === "paused"}
+        settings={{ pomodoroMinutes, overtimeMaxMinutes, overtimeChimeIntervalMinutes }}
+        onSaveSettings={updateSettings}
+        timerRunning={timerStatus === "running" || timerStatus === "paused" || timerStatus === "overtime"}
         sessions={sessions}
         todaySessions={todaySessions}
         todayMinutes={todayMinutes}
@@ -58,8 +64,11 @@ export function HomePage() {
       <main className="flex-1 flex flex-col items-center justify-center gap-8 px-4 py-8">
         <PomodoroTimer
           pomodoroMinutes={pomodoroMinutes}
+          overtimeMaxMinutes={overtimeMaxMinutes}
+          overtimeChimeIntervalMinutes={overtimeChimeIntervalMinutes}
           activeTodo={activeTodo}
           onPomodoroComplete={handlePomodoroComplete}
+          onOvertimeStop={handleOvertimeStop}
           onStatusChange={setTimerStatus}
         />
 

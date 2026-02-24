@@ -61,12 +61,30 @@ describe("todos storage", () => {
 
 describe("settings storage", () => {
   it("returns default settings when nothing saved", () => {
-    expect(getSettings()).toEqual({ pomodoroMinutes: 25 });
+    expect(getSettings()).toEqual({
+      pomodoroMinutes: 25,
+      overtimeMaxMinutes: 90,
+      overtimeChimeIntervalMinutes: 5,
+    });
   });
 
   it("round-trips settings", () => {
-    saveSettings({ pomodoroMinutes: 45 });
-    expect(getSettings()).toEqual({ pomodoroMinutes: 45 });
+    saveSettings({ pomodoroMinutes: 45, overtimeMaxMinutes: 60, overtimeChimeIntervalMinutes: 10 });
+    expect(getSettings()).toEqual({
+      pomodoroMinutes: 45,
+      overtimeMaxMinutes: 60,
+      overtimeChimeIntervalMinutes: 10,
+    });
+  });
+
+  it("merges partial saved settings with defaults", () => {
+    // Simulate old saved data that only has pomodoroMinutes
+    localStorage.setItem("eisenmate_settings", JSON.stringify({ pomodoroMinutes: 30 }));
+    expect(getSettings()).toEqual({
+      pomodoroMinutes: 30,
+      overtimeMaxMinutes: 90,
+      overtimeChimeIntervalMinutes: 5,
+    });
   });
 });
 

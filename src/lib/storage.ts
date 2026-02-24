@@ -18,6 +18,8 @@ export interface Session {
 
 export interface UserSettings {
   pomodoroMinutes: number;
+  overtimeMaxMinutes: number;
+  overtimeChimeIntervalMinutes: number;
 }
 
 export interface TimerState {
@@ -61,8 +63,14 @@ export function saveTodos(todos: Todo[]): void {
   write(KEYS.todos, todos);
 }
 
+const DEFAULT_SETTINGS: UserSettings = {
+  pomodoroMinutes: 25,
+  overtimeMaxMinutes: 90,
+  overtimeChimeIntervalMinutes: 5,
+};
+
 export function getSettings(): UserSettings {
-  return read<UserSettings>(KEYS.settings, { pomodoroMinutes: 25 });
+  return { ...DEFAULT_SETTINGS, ...read<Partial<UserSettings>>(KEYS.settings, {}) };
 }
 
 export function saveSettings(settings: UserSettings): void {
