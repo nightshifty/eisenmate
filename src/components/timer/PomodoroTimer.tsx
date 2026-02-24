@@ -1,24 +1,35 @@
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { TimerCircle } from "./TimerCircle";
 import { useTimer } from "@/hooks/useTimer";
 import { Play, Pause, RotateCcw } from "lucide-react";
 import type { Todo } from "@/hooks/useTodos";
+import type { TimerStatus } from "@/hooks/useTimer";
 
 interface PomodoroTimerProps {
   pomodoroMinutes: number;
   activeTodo: Todo | null;
   onPomodoroComplete: () => void;
+  onStatusChange?: (status: TimerStatus) => void;
 }
 
-export function PomodoroTimer({ pomodoroMinutes, activeTodo, onPomodoroComplete }: PomodoroTimerProps) {
+export function PomodoroTimer({ pomodoroMinutes, activeTodo, onPomodoroComplete, onStatusChange }: PomodoroTimerProps) {
   const { status, minutes, seconds, progress, start, pause, reset } = useTimer(pomodoroMinutes, activeTodo?.id ?? null);
 
+  const onCompleteRef = useRef(onPomodoroComplete);
+  const onStatusChangeRef = useRef(onStatusChange);
+
   useEffect(() => {
+    onCompleteRef.current = onPomodoroComplete;
+    onStatusChangeRef.current = onStatusChange;
+  });
+
+  useEffect(() => {
+    onStatusChangeRef.current?.(status);
     if (status === "completed") {
-      onPomodoroComplete();
+      onCompleteRef.current();
     }
-  }, [status, onPomodoroComplete]);
+  }, [status]);
 
   useEffect(() => {
     if ("Notification" in window && Notification.permission === "default") {

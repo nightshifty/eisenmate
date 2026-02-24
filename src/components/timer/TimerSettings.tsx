@@ -14,9 +14,10 @@ import { Settings } from "lucide-react";
 interface TimerSettingsProps {
   currentMinutes: number;
   onSave: (minutes: number) => void;
+  disabled?: boolean;
 }
 
-export function TimerSettings({ currentMinutes, onSave }: TimerSettingsProps) {
+export function TimerSettings({ currentMinutes, onSave, disabled }: TimerSettingsProps) {
   const [open, setOpen] = useState(false);
   const [minutes, setMinutes] = useState(String(currentMinutes));
 
@@ -29,9 +30,9 @@ export function TimerSettings({ currentMinutes, onSave }: TimerSettingsProps) {
   };
 
   return (
-    <Dialog open={open} onOpenChange={(o) => { setOpen(o); if (o) setMinutes(String(currentMinutes)); }}>
+    <Dialog open={open} onOpenChange={(o) => { if (disabled) return; setOpen(o); if (o) setMinutes(String(currentMinutes)); }}>
       <DialogTrigger asChild>
-        <Button variant="ghost" size="icon">
+        <Button variant="ghost" size="icon" disabled={disabled}>
           <Settings className="h-5 w-5" />
         </Button>
       </DialogTrigger>
@@ -49,6 +50,7 @@ export function TimerSettings({ currentMinutes, onSave }: TimerSettingsProps) {
               max={120}
               value={minutes}
               onChange={(e) => setMinutes(e.target.value)}
+              onKeyDown={(e) => { if (e.key === "Enter") handleSave(); }}
             />
           </div>
           <p className="text-sm text-muted-foreground">

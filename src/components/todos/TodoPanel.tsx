@@ -42,7 +42,7 @@ export function TodoPanel({
         <SheetHeader>
           <SheetTitle>Meine Aufgaben</SheetTitle>
         </SheetHeader>
-        <div className="flex flex-col gap-4 mt-4 overflow-hidden h-full">
+        <div className="flex flex-col gap-4 mt-4 overflow-hidden h-full px-4">
           <AddTodoForm onAdd={onAdd} />
           <div className="flex-1 overflow-y-auto">
             {loading ? (

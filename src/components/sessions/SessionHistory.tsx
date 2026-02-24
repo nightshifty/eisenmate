@@ -1,4 +1,4 @@
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import {
   Dialog,
   DialogContent,
@@ -6,7 +6,19 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import { Timer } from "lucide-react";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
+import { Button } from "@/components/ui/button";
+import { Timer, Trash2 } from "lucide-react";
 import type { Session } from "@/lib/storage";
 
 interface SessionHistoryProps {
@@ -14,6 +26,8 @@ interface SessionHistoryProps {
   sessions: Session[];
   todaySessions: number;
   todayMinutes: number;
+  onDeleteSession: (id: string) => void;
+  onClearSessions: () => void;
 }
 
 interface GroupedSessions {
@@ -66,8 +80,16 @@ function formatTime(isoString: string): string {
   });
 }
 
-export function SessionHistory({ children, sessions, todaySessions, todayMinutes }: SessionHistoryProps) {
+export function SessionHistory({
+  children,
+  sessions,
+  todaySessions,
+  todayMinutes,
+  onDeleteSession,
+  onClearSessions,
+}: SessionHistoryProps) {
   const grouped = useMemo(() => groupByDay(sessions), [sessions]);
+  const [confirmOpen, setConfirmOpen] = useState(false);
 
   return (
     <Dialog>
@@ -108,6 +130,14 @@ export function SessionHistory({ children, sessions, todaySessions, todayMinutes
                           {formatTime(session.completedAt)} &middot; {session.durationMinutes} min
                         </p>
                       </div>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-7 w-7 shrink-0 text-muted-foreground hover:text-destructive"
+                        onClick={() => onDeleteSession(session.id)}
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
                     </div>
                   ))}
                 </div>
@@ -115,6 +145,39 @@ export function SessionHistory({ children, sessions, todaySessions, todayMinutes
             ))
           )}
         </div>
+
+        {sessions.length > 0 && (
+          <div className="pt-2 border-t">
+            <AlertDialog open={confirmOpen} onOpenChange={setConfirmOpen}>
+              <AlertDialogTrigger asChild>
+                <Button variant="ghost" size="sm" className="w-full text-muted-foreground hover:text-destructive">
+                  <Trash2 className="h-4 w-4" />
+                  Alle löschen
+                </Button>
+              </AlertDialogTrigger>
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>Alle Sessions löschen?</AlertDialogTitle>
+                  <AlertDialogDescription>
+                    Damit werden alle {sessions.length} Sessions unwiderruflich gelöscht.
+                    Diese Aktion kann nicht rückgängig gemacht werden.
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel>Abbrechen</AlertDialogCancel>
+                  <AlertDialogAction
+                    onClick={() => {
+                      onClearSessions();
+                      setConfirmOpen(false);
+                    }}
+                  >
+                    Alle löschen
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
+          </div>
+        )}
       </DialogContent>
     </Dialog>
   );

@@ -73,4 +73,66 @@ describe("useSessions", () => {
     expect(result.current.todaySessions).toBe(0);
     expect(result.current.todayMinutes).toBe(0);
   });
+
+  it("deletes a single session and persists", () => {
+    const { result } = renderHook(() => useSessions());
+    const now = new Date().toISOString();
+
+    act(() =>
+      result.current.addSession({
+        todoId: null,
+        todoContent: "Session 1",
+        durationMinutes: 25,
+        completedAt: now,
+      }),
+    );
+    act(() =>
+      result.current.addSession({
+        todoId: null,
+        todoContent: "Session 2",
+        durationMinutes: 15,
+        completedAt: now,
+      }),
+    );
+
+    expect(result.current.sessions).toHaveLength(2);
+
+    const idToDelete = result.current.sessions[0].id;
+    act(() => result.current.deleteSession(idToDelete));
+
+    expect(result.current.sessions).toHaveLength(1);
+    expect(result.current.sessions[0].id).not.toBe(idToDelete);
+    expect(getSessions()).toHaveLength(1);
+  });
+
+  it("clears all sessions and persists", () => {
+    const { result } = renderHook(() => useSessions());
+    const now = new Date().toISOString();
+
+    act(() =>
+      result.current.addSession({
+        todoId: null,
+        todoContent: "Session 1",
+        durationMinutes: 25,
+        completedAt: now,
+      }),
+    );
+    act(() =>
+      result.current.addSession({
+        todoId: null,
+        todoContent: "Session 2",
+        durationMinutes: 15,
+        completedAt: now,
+      }),
+    );
+
+    expect(result.current.sessions).toHaveLength(2);
+
+    act(() => result.current.clearSessions());
+
+    expect(result.current.sessions).toEqual([]);
+    expect(getSessions()).toEqual([]);
+    expect(result.current.todaySessions).toBe(0);
+    expect(result.current.todayMinutes).toBe(0);
+  });
 });
