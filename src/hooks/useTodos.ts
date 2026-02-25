@@ -55,5 +55,9 @@ export function useTodos() {
     setTodos(updated);
   }, []);
 
-  return { todos, loading: false, addTodo, deleteTodo, trackTime, toggleDone, updateTodo };
+  const refreshTodos = useCallback(() => {
+    setTodos(getTodos());
+  }, []);
+
+  return { todos, loading: false, addTodo, deleteTodo, trackTime, toggleDone, updateTodo, refreshTodos };
 }

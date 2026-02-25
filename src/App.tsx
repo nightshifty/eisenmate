@@ -13,7 +13,7 @@ export default function App() {
   const [page, setPage] = useState<Page>("pomodoro");
   const todosHook = useTodos();
   const settingsHook = useUserSettings();
-  const sessionsHook = useSessions();
+  const sessionsHook = useSessions(todosHook.refreshTodos);
   const { theme, toggleTheme } = useTheme();
   const [timerRunning, setTimerRunning] = useState(false);
 
