@@ -18,6 +18,7 @@ export function useUserSettings() {
     overtimeMaxMinutes: settings.overtimeMaxMinutes,
     overtimeChimeIntervalMinutes: settings.overtimeChimeIntervalMinutes,
     allowEarlyFinish: settings.allowEarlyFinish,
+    silentMode: settings.silentMode,
     updateSettings,
   };
 }

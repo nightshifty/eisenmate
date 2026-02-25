@@ -29,6 +29,7 @@ export interface UserSettings {
   overtimeMaxMinutes: number;
   overtimeChimeIntervalMinutes: number;
   allowEarlyFinish: boolean;
+  silentMode: boolean;
 }
 
 export interface TimerState {
@@ -83,6 +84,7 @@ const DEFAULT_SETTINGS: UserSettings = {
   overtimeMaxMinutes: 90,
   overtimeChimeIntervalMinutes: 5,
   allowEarlyFinish: true,
+  silentMode: false,
 };
 
 export function getSettings(): UserSettings {

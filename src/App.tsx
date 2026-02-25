@@ -38,6 +38,8 @@ export default function App() {
         onClearSessions={sessionsHook.clearSessions}
         theme={theme}
         onToggleTheme={toggleTheme}
+        silentMode={settingsHook.silentMode}
+        onToggleSilentMode={() => settingsHook.updateSettings({ silentMode: !settingsHook.silentMode })}
       />
 
       {page === "pomodoro" ? (
@@ -53,6 +55,7 @@ export default function App() {
           overtimeMaxMinutes={settingsHook.overtimeMaxMinutes}
           overtimeChimeIntervalMinutes={settingsHook.overtimeChimeIntervalMinutes}
           allowEarlyFinish={settingsHook.allowEarlyFinish}
+          silentMode={settingsHook.silentMode}
           addSession={sessionsHook.addSession}
           onTimerRunningChange={setTimerRunning}
         />

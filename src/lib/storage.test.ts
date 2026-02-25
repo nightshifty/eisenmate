@@ -85,17 +85,19 @@ describe("settings storage", () => {
       overtimeMaxMinutes: 90,
       overtimeChimeIntervalMinutes: 5,
       allowEarlyFinish: true,
+      silentMode: false,
     });
   });
 
   it("round-trips settings", () => {
-    saveSettings({ pomodoroMinutes: 45, breakMinutes: 10, overtimeMaxMinutes: 60, overtimeChimeIntervalMinutes: 10, allowEarlyFinish: false });
+    saveSettings({ pomodoroMinutes: 45, breakMinutes: 10, overtimeMaxMinutes: 60, overtimeChimeIntervalMinutes: 10, allowEarlyFinish: false, silentMode: false });
     expect(getSettings()).toEqual({
       pomodoroMinutes: 45,
       breakMinutes: 10,
       overtimeMaxMinutes: 60,
       overtimeChimeIntervalMinutes: 10,
       allowEarlyFinish: false,
+      silentMode: false,
     });
   });
 
@@ -108,6 +110,7 @@ describe("settings storage", () => {
       overtimeMaxMinutes: 90,
       overtimeChimeIntervalMinutes: 5,
       allowEarlyFinish: true,
+      silentMode: false,
     });
   });
 });

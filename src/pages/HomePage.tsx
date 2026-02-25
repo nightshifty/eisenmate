@@ -26,6 +26,7 @@ interface HomePageProps {
   overtimeMaxMinutes: number;
   overtimeChimeIntervalMinutes: number;
   allowEarlyFinish: boolean;
+  silentMode?: boolean;
   addSession: (session: { todoId: string | null; todoContent: string; durationMinutes: number; completedAt: string }) => void;
   onTimerRunningChange: (running: boolean) => void;
 }
@@ -42,6 +43,7 @@ export function HomePage({
   overtimeMaxMinutes,
   overtimeChimeIntervalMinutes,
   allowEarlyFinish,
+  silentMode,
   addSession,
   onTimerRunningChange,
 }: HomePageProps) {
@@ -97,6 +99,7 @@ export function HomePage({
         overtimeMaxMinutes={overtimeMaxMinutes}
         overtimeChimeIntervalMinutes={overtimeChimeIntervalMinutes}
         allowEarlyFinish={allowEarlyFinish}
+        silentMode={silentMode}
         activeTodo={activeTodo}
         onPomodoroComplete={handlePomodoroComplete}
         onEarlyFinish={handleEarlyFinish}

@@ -33,12 +33,14 @@ interface UseBreakTimerOptions {
   defaultMinutes: number;
   overtimeMaxMinutes?: number;
   overtimeChimeIntervalMinutes?: number;
+  silentMode?: boolean;
 }
 
 export function useBreakTimer({
   defaultMinutes,
   overtimeMaxMinutes = 90,
   overtimeChimeIntervalMinutes = 5,
+  silentMode = false,
 }: UseBreakTimerOptions) {
   const defaultMinutesRef = useRef(defaultMinutes);
   defaultMinutesRef.current = defaultMinutes;
@@ -46,6 +48,8 @@ export function useBreakTimer({
   overtimeMaxMsRef.current = overtimeMaxMinutes * 60 * 1000;
   const overtimeChimeMsRef = useRef(overtimeChimeIntervalMinutes * 60 * 1000);
   overtimeChimeMsRef.current = overtimeChimeIntervalMinutes * 60 * 1000;
+  const silentModeRef = useRef(silentMode);
+  silentModeRef.current = silentMode;
 
   const [restored] = useState(() => readBreakState());
 
@@ -108,9 +112,9 @@ export function useBreakTimer({
         completionFiredRef.current = true;
         lastChimeAtMsRef.current = 0;
         setStatus("overtime");
-        playCompletionChime();
+        if (!silentModeRef.current) playCompletionChime();
         if (Notification.permission === "granted") {
-          new Notification("Pause vorbei!", { body: "Overtime läuft — zurück an die Arbeit." });
+          new Notification("Pause vorbei!", { body: "Overtime läuft — zurück an die Arbeit.", silent: silentModeRef.current });
         }
         return;
       }
@@ -120,9 +124,9 @@ export function useBreakTimer({
         setStatus("completed");
         if (intervalRef.current) clearInterval(intervalRef.current);
         clearBreakState();
-        playCompletionChime();
+        if (!silentModeRef.current) playCompletionChime();
         if (Notification.permission === "granted") {
-          new Notification("Pausen-Overtime beendet!", { body: "Maximale Overtime erreicht." });
+          new Notification("Pausen-Overtime beendet!", { body: "Maximale Overtime erreicht.", silent: silentModeRef.current });
         }
         return;
       }
@@ -131,7 +135,7 @@ export function useBreakTimer({
       const lastChime = lastChimeAtMsRef.current ?? 0;
       if (overtimeChimeMsRef.current > 0 && overtimeElapsed - lastChime >= overtimeChimeMsRef.current) {
         lastChimeAtMsRef.current = overtimeElapsed;
-        playCompletionChime();
+        if (!silentModeRef.current) playCompletionChime();
       }
     }
   }, []);
@@ -170,9 +174,9 @@ export function useBreakTimer({
         }
       } else {
         clearBreakState();
-        playCompletionChime();
+        if (!silentModeRef.current) playCompletionChime();
         if (Notification.permission === "granted") {
-          new Notification("Pausen-Overtime beendet!", { body: "Maximale Overtime erreicht." });
+          new Notification("Pausen-Overtime beendet!", { body: "Maximale Overtime erreicht.", silent: silentModeRef.current });
         }
       }
     }

@@ -16,6 +16,7 @@ interface PomodoroTimerProps {
   overtimeMaxMinutes: number;
   overtimeChimeIntervalMinutes: number;
   allowEarlyFinish: boolean;
+  silentMode?: boolean;
   activeTodo: Todo | null;
   onPomodoroComplete: () => void;
   onEarlyFinish: (elapsedMinutes: number) => void;
@@ -29,6 +30,7 @@ export function PomodoroTimer({
   overtimeMaxMinutes,
   overtimeChimeIntervalMinutes,
   allowEarlyFinish,
+  silentMode,
   activeTodo,
   onPomodoroComplete,
   onEarlyFinish,
@@ -42,12 +44,14 @@ export function PomodoroTimer({
     activeTodoId: activeTodo?.id ?? null,
     overtimeMaxMinutes,
     overtimeChimeIntervalMinutes,
+    silentMode,
   });
 
   const breakTimer = useBreakTimer({
     defaultMinutes: breakMinutes,
     overtimeMaxMinutes,
     overtimeChimeIntervalMinutes,
+    silentMode,
   });
 
   const onCompleteRef = useRef(onPomodoroComplete);

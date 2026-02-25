@@ -9,7 +9,7 @@ import { TimerSettings } from "@/components/timer/TimerSettings";
 import { AboutPomodoro } from "@/components/help/AboutPomodoro";
 import { HowToUse } from "@/components/help/HowToUse";
 import { SessionHistory } from "@/components/sessions/SessionHistory";
-import { HelpCircle, History, Sun, Moon, Timer, LayoutGrid } from "lucide-react";
+import { HelpCircle, History, Sun, Moon, Timer, LayoutGrid, Volume2, VolumeOff } from "lucide-react";
 import type { Session, UserSettings } from "@/lib/storage";
 import type { Page } from "@/App";
 import { cn } from "@/lib/utils";
@@ -33,6 +33,8 @@ interface NavbarProps {
   onClearSessions: () => void;
   theme: "light" | "dark";
   onToggleTheme: () => void;
+  silentMode: boolean;
+  onToggleSilentMode: () => void;
 }
 
 export function Navbar({
@@ -48,12 +50,28 @@ export function Navbar({
   onClearSessions,
   theme,
   onToggleTheme,
+  silentMode,
+  onToggleSilentMode,
 }: NavbarProps) {
   return (
     <nav className="border-b bg-card">
       <div className="max-w-5xl mx-auto flex items-center justify-between px-4 h-14">
         <div className="flex items-center gap-4">
-          <span className="text-xl font-bold text-primary">Eisenmate</span>
+          <div className="flex items-center gap-1.5">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" className="h-7 w-7 shrink-0">
+              <defs>
+                <linearGradient id="logo-g" x1="0" y1="0" x2="1" y2="1">
+                  <stop offset="0%" stopColor="#4A5568" />
+                  <stop offset="100%" stopColor="#1A202C" />
+                </linearGradient>
+              </defs>
+              <ellipse cx="32" cy="38" rx="18" ry="22" fill="url(#logo-g)" />
+              <rect x="26" y="14" width="12" height="6" rx="2" fill="#718096" />
+              <line x1="38" y1="18" x2="44" y2="6" stroke="#E53E3E" strokeWidth="3" strokeLinecap="round" />
+              <circle cx="44" cy="5" r="3" fill="#E53E3E" />
+            </svg>
+            <span className="hidden sm:inline text-xl font-bold text-primary">Eisenmate</span>
+          </div>
 
           <div className="flex items-center gap-1 ml-2">
             <Button
@@ -121,6 +139,10 @@ export function Navbar({
               </HowToUse>
             </DropdownMenuContent>
           </DropdownMenu>
+
+          <Button variant="ghost" size="icon" onClick={onToggleSilentMode} title={silentMode ? "Ton einschalten" : "Stummschalten"}>
+            {silentMode ? <VolumeOff className="h-5 w-5" /> : <Volume2 className="h-5 w-5" />}
+          </Button>
 
           <Button variant="ghost" size="icon" onClick={onToggleTheme}>
             {theme === "dark" ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
