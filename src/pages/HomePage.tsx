@@ -54,11 +54,11 @@ export function HomePage({
     setActiveTodo((prev) => (prev?.id === todo.id ? null : todo));
   };
 
-  const handlePomodoroComplete = useCallback(() => {
+  const handlePomodoroComplete = useCallback((effectivePomodoroMinutes: number) => {
     if (activeTodo) {
-      trackTime(activeTodo.id, pomodoroMinutes);
+      trackTime(activeTodo.id, effectivePomodoroMinutes);
     }
-  }, [activeTodo, pomodoroMinutes, trackTime]);
+  }, [activeTodo, trackTime]);
 
   const handleEarlyFinish = useCallback((elapsedMinutes: number) => {
     if (activeTodo && elapsedMinutes > 0) {
@@ -73,7 +73,7 @@ export function HomePage({
     });
   }, [activeTodo, trackTime, addSession]);
 
-  const handleOvertimeStop = useCallback((overtimeMinutes: number) => {
+  const handleOvertimeStop = useCallback((overtimeMinutes: number, effectivePomodoroMinutes: number) => {
     if (activeTodo && overtimeMinutes > 0) {
       trackTime(activeTodo.id, overtimeMinutes);
     }
@@ -81,10 +81,10 @@ export function HomePage({
     addSession({
       todoId: activeTodo?.id ?? null,
       todoContent: activeTodo?.content ?? "Kein Todo",
-      durationMinutes: pomodoroMinutes + overtimeMinutes,
+      durationMinutes: effectivePomodoroMinutes + overtimeMinutes,
       completedAt: new Date().toISOString(),
     });
-  }, [activeTodo, pomodoroMinutes, trackTime, addSession]);
+  }, [activeTodo, trackTime, addSession]);
 
   const handleStatusChange = useCallback((status: CombinedTimerStatus) => {
     setTimerStatus(status);

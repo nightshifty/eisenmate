@@ -18,9 +18,9 @@ interface PomodoroTimerProps {
   allowEarlyFinish: boolean;
   silentMode?: boolean;
   activeTodo: Todo | null;
-  onPomodoroComplete: () => void;
+  onPomodoroComplete: (effectivePomodoroMinutes: number) => void;
   onEarlyFinish: (elapsedMinutes: number) => void;
-  onOvertimeStop: (overtimeMinutes: number) => void;
+  onOvertimeStop: (overtimeMinutes: number, effectivePomodoroMinutes: number) => void;
   onStatusChange?: (status: TimerStatus | "break") => void;
 }
 
@@ -38,9 +38,14 @@ export function PomodoroTimer({
   onStatusChange,
 }: PomodoroTimerProps) {
   const [phase, setPhase] = useState<Phase>("pomodoro");
+  const [overrideMinutes, setOverrideMinutes] = useState<number | null>(null);
+
+  const effectiveMinutes = overrideMinutes ?? pomodoroMinutes;
+  const effectiveMinutesRef = useRef(effectiveMinutes);
+  effectiveMinutesRef.current = effectiveMinutes;
 
   const pomodoro = useTimer({
-    defaultMinutes: pomodoroMinutes,
+    defaultMinutes: effectiveMinutes,
     activeTodoId: activeTodo?.id ?? null,
     overtimeMaxMinutes,
     overtimeChimeIntervalMinutes,
@@ -92,15 +97,16 @@ export function PomodoroTimer({
 
     // Transition into overtime -> fire pomodoro complete (books pomodoro duration)
     if (pomodoro.status === "overtime" && prev !== "overtime") {
-      onCompleteRef.current();
+      onCompleteRef.current(effectiveMinutesRef.current);
     }
 
     // Transition into completed from overtime -> auto-stop overtime, then start break
     if (pomodoro.status === "completed" && prev === "overtime") {
       const overtimeMinutes = Math.floor(pomodoro.overtimeMs / 60000);
-      onOvertimeStopRef.current(overtimeMinutes);
+      onOvertimeStopRef.current(overtimeMinutes, effectiveMinutesRef.current);
       // Auto-transition to break
       pomodoro.reset();
+      setOverrideMinutes(null);
       setPhase("break");
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -142,10 +148,11 @@ export function PomodoroTimer({
     // If resetting from overtime, book the overtime duration first
     if (pomodoro.status === "overtime") {
       const overtimeMinutes = Math.floor(pomodoro.overtimeMs / 60000);
-      onOvertimeStopRef.current(overtimeMinutes);
+      onOvertimeStopRef.current(overtimeMinutes, effectiveMinutesRef.current);
     }
     const wasOvertime = pomodoro.status === "overtime";
     pomodoro.reset();
+    setOverrideMinutes(null);
     // After manual stop in overtime, transition to break
     if (wasOvertime) {
       setPhase("break");
@@ -154,19 +161,29 @@ export function PomodoroTimer({
 
   const handleEarlyFinish = () => {
     // Calculate elapsed time in minutes (round down)
-    const totalMs = pomodoroMinutes * 60 * 1000;
+    const totalMs = effectiveMinutes * 60 * 1000;
     const elapsedMs = totalMs - pomodoro.remainingMs;
     const elapsedMinutes = Math.floor(elapsedMs / 60000);
     if (elapsedMinutes > 0) {
       onEarlyFinishRef.current(elapsedMinutes);
     }
     pomodoro.reset();
+    setOverrideMinutes(null);
     setPhase("break");
+  };
+
+  const handleCancel = () => {
+    pomodoro.reset();
+    setOverrideMinutes(null);
   };
 
   const handleSkipBreak = () => {
     breakTimer.skip();
     setPhase("pomodoro");
+  };
+
+  const handleMinutesChange = (minutes: number) => {
+    setOverrideMinutes(minutes);
   };
 
   // Determine what to show based on phase
@@ -206,6 +223,7 @@ export function PomodoroTimer({
 
   // Pomodoro phase
   const pomodoroVariant: TimerVariant = pomodoro.isOvertime ? "overtime" : "pomodoro";
+  const isIdle = pomodoro.status === "idle";
 
   return (
     <div className="flex flex-col items-center gap-4 sm:gap-6">
@@ -214,6 +232,8 @@ export function PomodoroTimer({
         minutes={pomodoro.minutes}
         seconds={pomodoro.seconds}
         variant={pomodoroVariant}
+        editable={isIdle}
+        onMinutesChange={handleMinutesChange}
       />
 
       {activeTodo && (
@@ -244,7 +264,7 @@ export function PomodoroTimer({
         ) : null}
 
         {(pomodoro.status === "running" || pomodoro.status === "paused" || pomodoro.status === "completed") && (
-          <Button onClick={() => pomodoro.reset()} size="lg" variant="outline" className="gap-2">
+          <Button onClick={handleCancel} size="lg" variant="outline" className="gap-2">
             <X className="h-5 w-5" />
             Abbrechen
           </Button>
