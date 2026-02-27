@@ -3,6 +3,7 @@ import { ChevronDown, ChevronRight, Inbox } from "lucide-react";
 import type { Todo } from "@/lib/storage";
 import { EisenhowerTodoItem } from "./EisenhowerTodoItem";
 import { cn } from "@/lib/utils";
+import { useTranslation } from "react-i18next";
 
 interface UnsortedTodosProps {
   todos: Todo[];
@@ -21,6 +22,7 @@ export function UnsortedTodos({
   onDragStart,
   onDrop,
 }: UnsortedTodosProps) {
+  const { t } = useTranslation();
   const [isOpen, setIsOpen] = useState(true);
   const [isDragOver, setIsDragOver] = useState(false);
 
@@ -63,7 +65,7 @@ export function UnsortedTodos({
           <ChevronRight className="h-4 w-4 text-muted-foreground" />
         )}
         <Inbox className="h-4 w-4 text-muted-foreground" />
-        <span className="text-sm font-medium">Unsortiert</span>
+        <span className="text-sm font-medium">{t("eisenhower.unsorted")}</span>
         <span className="text-xs text-muted-foreground">({todos.length})</span>
       </button>
 

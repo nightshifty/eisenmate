@@ -11,6 +11,7 @@ import { ClipboardList, ChevronDown, Check, X } from "lucide-react";
 import { useState } from "react";
 import type { Todo } from "@/hooks/useTodos";
 import { cn } from "@/lib/utils";
+import { useTranslation } from "react-i18next";
 
 interface TodoPanelProps {
   todos: Todo[];
@@ -35,6 +36,7 @@ export function TodoPanel({
   onDelete,
   onToggleDone,
 }: TodoPanelProps) {
+  const { t } = useTranslation();
   const [open, setOpen] = useState(false);
 
   const handleSelect = (todo: Todo) => {
@@ -87,7 +89,7 @@ export function TodoPanel({
           ) : (
             <div className="flex items-center gap-2.5">
               <ClipboardList className="h-4 w-4 shrink-0 text-muted-foreground" />
-              <span className="flex-1 text-sm text-muted-foreground">Aufgabe auswählen...</span>
+              <span className="flex-1 text-sm text-muted-foreground">{t("todos.selectTask")}</span>
               <ChevronDown className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
             </div>
           )}
@@ -95,13 +97,13 @@ export function TodoPanel({
       </SheetTrigger>
       <SheetContent side="bottom" className="h-[70vh]">
         <SheetHeader>
-          <SheetTitle>Meine Aufgaben</SheetTitle>
+          <SheetTitle>{t("todos.myTasks")}</SheetTitle>
         </SheetHeader>
         <div className="flex flex-col gap-4 mt-4 overflow-hidden h-full px-4">
           <AddTodoForm onAdd={onAdd} />
           <div className="flex-1 overflow-y-auto">
             {loading ? (
-              <p className="text-center text-sm text-muted-foreground py-8">Laden...</p>
+              <p className="text-center text-sm text-muted-foreground py-8">{t("todos.loading")}</p>
             ) : (
               <TodoList
                 todos={todos}

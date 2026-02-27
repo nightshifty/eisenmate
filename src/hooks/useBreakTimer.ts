@@ -1,5 +1,6 @@
 import { useState, useRef, useCallback, useEffect } from "react";
 import { playCompletionChime } from "@/lib/chime";
+import i18n from "@/i18n";
 
 export type BreakStatus = "idle" | "running" | "overtime" | "completed";
 
@@ -114,7 +115,7 @@ export function useBreakTimer({
         setStatus("overtime");
         if (!silentModeRef.current) playCompletionChime();
         if (Notification.permission === "granted") {
-          new Notification("Pause vorbei!", { body: "Overtime läuft — zurück an die Arbeit.", silent: silentModeRef.current });
+          new Notification(i18n.t("notifications.breakFinished"), { body: i18n.t("notifications.breakOvertimeBody"), silent: silentModeRef.current });
         }
         return;
       }
@@ -126,7 +127,7 @@ export function useBreakTimer({
         clearBreakState();
         if (!silentModeRef.current) playCompletionChime();
         if (Notification.permission === "granted") {
-          new Notification("Pausen-Overtime beendet!", { body: "Maximale Overtime erreicht.", silent: silentModeRef.current });
+          new Notification(i18n.t("notifications.breakOvertimeFinished"), { body: i18n.t("notifications.overtimeMaxReached"), silent: silentModeRef.current });
         }
         return;
       }
@@ -176,7 +177,7 @@ export function useBreakTimer({
         clearBreakState();
         if (!silentModeRef.current) playCompletionChime();
         if (Notification.permission === "granted") {
-          new Notification("Pausen-Overtime beendet!", { body: "Maximale Overtime erreicht.", silent: silentModeRef.current });
+          new Notification(i18n.t("notifications.breakOvertimeFinished"), { body: i18n.t("notifications.overtimeMaxReached"), silent: silentModeRef.current });
         }
       }
     }

@@ -29,6 +29,7 @@ import {
   type ExportData,
   type ImportMode,
 } from "@/lib/storage";
+import { useTranslation } from "react-i18next";
 
 interface TimerSettingsProps {
   currentSettings: {
@@ -47,6 +48,7 @@ interface TimerSettingsProps {
 }
 
 export function TimerSettings({ currentSettings, onSave, disabled, children, open: controlledOpen, onOpenChange }: TimerSettingsProps) {
+  const { t } = useTranslation();
   const [internalOpen, setInternalOpen] = useState(false);
   const isControlled = controlledOpen !== undefined;
   const open = isControlled ? controlledOpen : internalOpen;
@@ -124,7 +126,8 @@ export function TimerSettings({ currentSettings, onSave, disabled, children, ope
         setImportData(parsed);
         setImportModeOpen(true);
       } catch (err) {
-        setImportError(err instanceof Error ? err.message : "Unbekannter Fehler beim Lesen der Datei.");
+        const key = err instanceof Error ? err.message : "";
+        setImportError(key.startsWith("storage.") ? t(key) : t("settings.unknownFileError"));
       }
     };
     reader.readAsText(file);
@@ -142,7 +145,7 @@ export function TimerSettings({ currentSettings, onSave, disabled, children, ope
       // Reload after a short delay so the user sees the success message
       setTimeout(() => window.location.reload(), 1200);
     } catch {
-      setImportError("Fehler beim Importieren der Daten.");
+      setImportError(t("settings.importError"));
       setImportModeOpen(false);
     }
   };
@@ -160,11 +163,11 @@ export function TimerSettings({ currentSettings, onSave, disabled, children, ope
       ) : null}
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>Timer-Einstellungen</DialogTitle>
+          <DialogTitle>{t("settings.title")}</DialogTitle>
         </DialogHeader>
         <div className="space-y-4 pt-4">
           <div className="space-y-2">
-            <Label htmlFor="pomodoro-minutes">Pomodoro-Dauer (Minuten)</Label>
+            <Label htmlFor="pomodoro-minutes">{t("settings.pomodoroDuration")}</Label>
             <Input
               id="pomodoro-minutes"
               type="number"
@@ -176,7 +179,7 @@ export function TimerSettings({ currentSettings, onSave, disabled, children, ope
             />
           </div>
           <div className="space-y-2">
-            <Label htmlFor="break-minutes">Pausendauer (Minuten)</Label>
+            <Label htmlFor="break-minutes">{t("settings.breakDuration")}</Label>
             <Input
               id="break-minutes"
               type="number"
@@ -188,7 +191,7 @@ export function TimerSettings({ currentSettings, onSave, disabled, children, ope
             />
           </div>
           <div className="space-y-2">
-            <Label htmlFor="overtime-max">Maximale Overtime (Minuten)</Label>
+            <Label htmlFor="overtime-max">{t("settings.maxOvertime")}</Label>
             <Input
               id="overtime-max"
               type="number"
@@ -200,7 +203,7 @@ export function TimerSettings({ currentSettings, onSave, disabled, children, ope
             />
           </div>
           <div className="space-y-2">
-            <Label htmlFor="chime-interval">Erinnerungston-Intervall (Minuten)</Label>
+            <Label htmlFor="chime-interval">{t("settings.chimeInterval")}</Label>
             <Input
               id="chime-interval"
               type="number"
@@ -219,7 +222,7 @@ export function TimerSettings({ currentSettings, onSave, disabled, children, ope
               onChange={(e) => setAllowEarlyFinish(e.target.checked)}
               className="h-4 w-4 rounded border-input accent-primary"
             />
-            <Label htmlFor="allow-early-finish">Frühzeitiges Abschließen erlauben</Label>
+            <Label htmlFor="allow-early-finish">{t("settings.allowEarlyFinish")}</Label>
           </div>
           <div className="flex items-center gap-2">
             <input
@@ -229,23 +232,23 @@ export function TimerSettings({ currentSettings, onSave, disabled, children, ope
               onChange={(e) => setSessionTimerEnabled(e.target.checked)}
               className="h-4 w-4 rounded border-input accent-primary"
             />
-            <Label htmlFor="session-timer-enabled">Session-Timer anzeigen</Label>
+            <Label htmlFor="session-timer-enabled">{t("settings.showSessionTimer")}</Label>
           </div>
           <p className="text-sm text-muted-foreground">
-            Wird lokal in deinem Browser gespeichert.
+            {t("settings.storedLocally")}
           </p>
           <Button onClick={handleSave} className="w-full">
-            Einstellungen speichern
+            {t("settings.saveSettings")}
           </Button>
 
           <hr className="border-border" />
 
           <div className="space-y-3">
-            <Label className="text-base font-medium">Daten verwalten</Label>
+            <Label className="text-base font-medium">{t("settings.manageData")}</Label>
             <div className="flex gap-2">
               <Button variant="outline" className="flex-1 gap-2" onClick={handleExport}>
                 <Download className="h-4 w-4" />
-                Exportieren
+                {t("settings.export")}
               </Button>
               <Button
                 variant="outline"
@@ -253,7 +256,7 @@ export function TimerSettings({ currentSettings, onSave, disabled, children, ope
                 onClick={() => fileInputRef.current?.click()}
               >
                 <Upload className="h-4 w-4" />
-                Importieren
+                {t("settings.import")}
               </Button>
               <input
                 ref={fileInputRef}
@@ -268,7 +271,7 @@ export function TimerSettings({ currentSettings, onSave, disabled, children, ope
             )}
             {importSuccess && (
               <p className="text-sm text-green-600 dark:text-green-400">
-                Daten erfolgreich importiert. Seite wird neu geladen...
+                {t("settings.importSuccess")}
               </p>
             )}
           </div>
@@ -278,21 +281,20 @@ export function TimerSettings({ currentSettings, onSave, disabled, children, ope
       <AlertDialog open={importModeOpen} onOpenChange={(o) => { if (!o) { setImportModeOpen(false); setImportData(null); } }}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Wie sollen die Daten importiert werden?</AlertDialogTitle>
+            <AlertDialogTitle>{t("settings.importModeTitle")}</AlertDialogTitle>
             <AlertDialogDescription>
-              <span className="font-medium">Ersetzen</span> ersetzt alle bestehenden Daten durch den Import.{" "}
-              <span className="font-medium">Zusammenführen</span> fügt neue Einträge hinzu und aktualisiert bestehende.
+              <span dangerouslySetInnerHTML={{ __html: t("settings.importModeDescription") }} />
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel onClick={() => { setImportModeOpen(false); setImportData(null); }}>
-              Abbrechen
+              {t("common.cancel")}
             </AlertDialogCancel>
             <AlertDialogAction variant="outline" onClick={() => handleImport("merge")}>
-              Zusammenführen
+              {t("settings.merge")}
             </AlertDialogAction>
             <AlertDialogAction onClick={() => handleImport("replace")}>
-              Ersetzen
+              {t("settings.replace")}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

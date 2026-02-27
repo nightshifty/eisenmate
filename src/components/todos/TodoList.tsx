@@ -2,6 +2,7 @@ import { useMemo } from "react";
 import { TodoItem } from "./TodoItem";
 import type { Todo } from "@/hooks/useTodos";
 import type { EisenhowerQuadrant } from "@/lib/storage";
+import { useTranslation } from "react-i18next";
 
 const QUADRANT_PRIORITY: Record<EisenhowerQuadrant, number> = {
   "urgent-important": 0,
@@ -24,6 +25,7 @@ interface TodoListProps {
 }
 
 export function TodoList({ todos, activeTodoId, onSelect, onDelete, onToggleDone }: TodoListProps) {
+  const { t } = useTranslation();
   const sortedTodos = useMemo(
     () => [...todos].sort((a, b) => getQuadrantPriority(a.quadrant) - getQuadrantPriority(b.quadrant)),
     [todos],
@@ -32,7 +34,7 @@ export function TodoList({ todos, activeTodoId, onSelect, onDelete, onToggleDone
   if (sortedTodos.length === 0) {
     return (
       <p className="text-center text-sm text-muted-foreground py-8">
-        Noch keine Aufgaben. Erstelle eine neue!
+        {t("todos.noTasks")}
       </p>
     );
   }

@@ -1,5 +1,6 @@
 import { Button } from "@/components/ui/button";
 import { Clock, Square, Timer } from "lucide-react";
+import { useTranslation } from "react-i18next";
 
 interface SessionTimerBarProps {
   display: string;
@@ -8,6 +9,8 @@ interface SessionTimerBarProps {
 }
 
 export function SessionTimerBar({ display, pomodoroCount, onStop }: SessionTimerBarProps) {
+  const { t } = useTranslation();
+
   return (
     <div className="border-b bg-muted/50 backdrop-blur-sm">
       <div className="max-w-5xl mx-auto flex items-center justify-between px-4 h-9">
@@ -19,7 +22,7 @@ export function SessionTimerBar({ display, pomodoroCount, onStop }: SessionTimer
           <span className="text-border">|</span>
           <div className="flex items-center gap-1.5">
             <Timer className="h-3.5 w-3.5" />
-            <span>{pomodoroCount} {pomodoroCount === 1 ? "Pomodoro" : "Pomodoros"}</span>
+            <span>{pomodoroCount} {t("sessions.pomodoro", { count: pomodoroCount })}</span>
           </div>
         </div>
         <Button
@@ -29,7 +32,7 @@ export function SessionTimerBar({ display, pomodoroCount, onStop }: SessionTimer
           onClick={onStop}
         >
           <Square className="h-3 w-3" />
-          Session beenden
+          {t("sessions.endSession")}
         </Button>
       </div>
     </div>

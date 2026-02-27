@@ -21,6 +21,7 @@ import type { Todo } from "@/hooks/useTodos";
 import type { TimerStatus } from "@/hooks/useTimer";
 import { fireConfetti } from "@/lib/confetti";
 import { getTimerState } from "@/lib/storage";
+import { useTranslation } from "react-i18next";
 
 type Phase = "pomodoro" | "break";
 
@@ -55,6 +56,7 @@ export function PomodoroTimer({
   onStatusChange,
   children,
 }: PomodoroTimerProps) {
+  const { t } = useTranslation();
   const [phase, setPhase] = useState<Phase>("pomodoro");
   const [overrideMinutes, setOverrideMinutes] = useState<number | null>(() => {
     const saved = getTimerState();
@@ -272,7 +274,7 @@ export function PomodoroTimer({
         />
         <div className="flex items-center gap-2 text-sm text-muted-foreground">
           <Coffee className="h-4 w-4 text-break" />
-          <span>Pause</span>
+          <span>{t("timer.break")}</span>
         </div>
       </div>
     );
@@ -282,12 +284,12 @@ export function PomodoroTimer({
         {breakTimer.isOvertime ? (
           <Button onClick={handleSkipBreak} size="lg" variant="destructive" className="gap-2">
             <Square className="h-5 w-5" />
-            Stoppen
+            {t("timer.stop")}
           </Button>
         ) : (
           <Button onClick={handleSkipBreak} size="lg" variant="outline" className="gap-2">
             <SkipForward className="h-5 w-5" />
-            Überspringen
+            {t("timer.skip")}
           </Button>
         )}
       </div>
@@ -319,22 +321,22 @@ export function PomodoroTimer({
         {pomodoro.status === "idle" || pomodoro.status === "paused" ? (
           <Button onClick={pomodoro.start} size="lg" className="gap-2">
             <Play className="h-5 w-5" />
-            {pomodoro.status === "paused" ? "Fortsetzen" : "Start"}
+            {pomodoro.status === "paused" ? t("timer.resume") : t("timer.start")}
           </Button>
         ) : pomodoro.status === "running" && !canEarlyFinish ? (
           <Button onClick={handleCancel} size="lg" variant="outline" className="gap-2">
             <X className="h-5 w-5" />
-            Abbrechen
+            {t("timer.cancel")}
           </Button>
         ) : pomodoro.status === "running" && allowEarlyFinish ? (
           <Button onClick={handleEarlyFinish} size="lg" variant="default" className="gap-2">
             <Check className="h-5 w-5" />
-            Abschließen
+            {t("timer.finish")}
           </Button>
         ) : pomodoro.status === "overtime" ? (
           <Button onClick={handlePomodoroReset} size="lg" variant="default" className="gap-2">
             <Check className="h-5 w-5" />
-            Abschließen
+            {t("timer.finish")}
           </Button>
         ) : null}
       </div>
@@ -349,16 +351,16 @@ export function PomodoroTimer({
                 <AlertDialogMedia className="bg-primary/10">
                   <PartyPopper className="h-8 w-8 text-primary" />
                 </AlertDialogMedia>
-                <AlertDialogTitle>Aufgabe abgeschlossen?</AlertDialogTitle>
+                <AlertDialogTitle>{t("timer.taskCompleted")}</AlertDialogTitle>
                 <AlertDialogDescription>
-                  Hast du <span className="font-medium text-foreground">„{activeTodo.content}"</span> vollständig erledigt?
+                  <span dangerouslySetInnerHTML={{ __html: t("timer.taskCompletedDescription", { task: activeTodo.content }) }} />
                 </AlertDialogDescription>
               </>
             ) : (
               <>
-                <AlertDialogTitle>Pomodoro abschließen?</AlertDialogTitle>
+                <AlertDialogTitle>{t("timer.finishPomodoro")}</AlertDialogTitle>
                 <AlertDialogDescription>
-                  Möchtest du diesen Pomodoro als abgeschlossen werten?
+                  {t("timer.finishPomodoroDescription")}
                 </AlertDialogDescription>
               </>
             )}
@@ -366,14 +368,14 @@ export function PomodoroTimer({
           <AlertDialogFooter className="flex! flex-col! gap-2">
             {activeTodo && (
               <AlertDialogAction onClick={handleTaskCompleteConfirm}>
-                Ja, erledigt
+                {t("timer.yesDone")}
               </AlertDialogAction>
             )}
             <AlertDialogCancel onClick={handleTaskCompleteDecline} variant={activeTodo ? "outline" : "default"}>
-              {activeTodo ? "Nein, weiter offen" : "Pomodoro abschließen"}
+              {activeTodo ? t("timer.noStillOpen") : t("timer.finishPomodoroButton")}
             </AlertDialogCancel>
             <Button onClick={handleAbort} variant="outline">
-              Pomodoro erfolglos abbrechen
+              {t("timer.abortPomodoro")}
             </Button>
           </AlertDialogFooter>
         </AlertDialogContent>

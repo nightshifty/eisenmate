@@ -2,12 +2,14 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Plus } from "lucide-react";
+import { useTranslation } from "react-i18next";
 
 interface AddTodoFormProps {
   onAdd: (content: string, estimationMinutes: number) => void;
 }
 
 export function AddTodoForm({ onAdd }: AddTodoFormProps) {
+  const { t } = useTranslation();
   const [content, setContent] = useState("");
   const [estimation, setEstimation] = useState("25");
 
@@ -22,7 +24,7 @@ export function AddTodoForm({ onAdd }: AddTodoFormProps) {
   return (
     <form onSubmit={handleSubmit} className="flex gap-2">
       <Input
-        placeholder="Neue Aufgabe..."
+        placeholder={t("todos.newTask")}
         value={content}
         onChange={(e) => setContent(e.target.value)}
         className="flex-1"

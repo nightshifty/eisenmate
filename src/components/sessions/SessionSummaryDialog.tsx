@@ -11,6 +11,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Clock, Timer, TrendingUp, Trophy, ListChecks } from "lucide-react";
 import type { SessionSummary } from "@/hooks/useSessionTimer";
+import { useTranslation } from "react-i18next";
 
 interface SessionSummaryDialogProps {
   open: boolean;
@@ -36,6 +37,8 @@ export function SessionSummaryDialog({
   onConfirm,
   onCancel,
 }: SessionSummaryDialogProps) {
+  const { t } = useTranslation();
+
   if (!summary) return null;
 
   return (
@@ -45,9 +48,9 @@ export function SessionSummaryDialog({
           <AlertDialogMedia className="bg-primary/10">
             <Trophy className="h-8 w-8 text-primary" />
           </AlertDialogMedia>
-          <AlertDialogTitle>Session beenden?</AlertDialogTitle>
+          <AlertDialogTitle>{t("sessions.endSessionQuestion")}</AlertDialogTitle>
           <AlertDialogDescription>
-            Hier ist deine Zusammenfassung:
+            {t("sessions.yourSummary")}
           </AlertDialogDescription>
         </AlertDialogHeader>
 
@@ -57,28 +60,28 @@ export function SessionSummaryDialog({
               <Clock className="h-4 w-4 text-muted-foreground mt-0.5 shrink-0" />
               <div>
                 <p className="text-sm font-medium">{formatDuration(summary.totalMinutes)}</p>
-                <p className="text-xs text-muted-foreground">Gesamtdauer</p>
+                <p className="text-xs text-muted-foreground">{t("sessions.totalDuration")}</p>
               </div>
             </div>
             <div className="rounded-lg bg-muted/50 p-3 flex items-start gap-2.5">
               <Timer className="h-4 w-4 text-primary mt-0.5 shrink-0" />
               <div>
                 <p className="text-sm font-medium">{summary.pomodoroCount}</p>
-                <p className="text-xs text-muted-foreground">{summary.pomodoroCount === 1 ? "Pomodoro" : "Pomodoros"}</p>
+                <p className="text-xs text-muted-foreground">{t("sessions.pomodoro", { count: summary.pomodoroCount })}</p>
               </div>
             </div>
             <div className="rounded-lg bg-muted/50 p-3 flex items-start gap-2.5">
               <TrendingUp className="h-4 w-4 text-break mt-0.5 shrink-0" />
               <div>
                 <p className="text-sm font-medium">{formatDuration(summary.focusMinutes)}</p>
-                <p className="text-xs text-muted-foreground">Fokuszeit</p>
+                <p className="text-xs text-muted-foreground">{t("sessions.focusTime")}</p>
               </div>
             </div>
             <div className="rounded-lg bg-muted/50 p-3 flex items-start gap-2.5">
               <TrendingUp className="h-4 w-4 text-muted-foreground mt-0.5 shrink-0" />
               <div>
                 <p className="text-sm font-medium">{summary.productivityPercent}%</p>
-                <p className="text-xs text-muted-foreground">Produktivität</p>
+                <p className="text-xs text-muted-foreground">{t("sessions.productivity")}</p>
               </div>
             </div>
           </div>
@@ -88,7 +91,7 @@ export function SessionSummaryDialog({
               <Trophy className="h-4 w-4 text-yellow-500 mt-0.5 shrink-0" />
               <div>
                 <p className="text-sm font-medium">{formatDuration(summary.longestPomodoroMinutes)}</p>
-                <p className="text-xs text-muted-foreground">Längster Pomodoro</p>
+                <p className="text-xs text-muted-foreground">{t("sessions.longestPomodoro")}</p>
               </div>
             </div>
           )}
@@ -97,7 +100,7 @@ export function SessionSummaryDialog({
             <div className="rounded-lg bg-muted/50 p-3 flex items-start gap-2.5">
               <ListChecks className="h-4 w-4 text-muted-foreground mt-0.5 shrink-0" />
               <div>
-                <p className="text-sm font-medium">{summary.todoNames.length} {summary.todoNames.length === 1 ? "Aufgabe" : "Aufgaben"}</p>
+                <p className="text-sm font-medium">{t("sessions.task", { count: summary.todoNames.length })}</p>
                 <p className="text-xs text-muted-foreground line-clamp-2">
                   {summary.todoNames.join(", ")}
                 </p>
@@ -108,10 +111,10 @@ export function SessionSummaryDialog({
 
         <AlertDialogFooter className="flex! flex-col! gap-2">
           <AlertDialogAction onClick={onConfirm}>
-            Session beenden
+            {t("sessions.endSession")}
           </AlertDialogAction>
           <AlertDialogCancel onClick={onCancel} variant="outline">
-            Weiter arbeiten
+            {t("sessions.keepWorking")}
           </AlertDialogCancel>
         </AlertDialogFooter>
       </AlertDialogContent>

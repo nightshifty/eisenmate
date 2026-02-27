@@ -20,6 +20,8 @@ import {
 import { Button } from "@/components/ui/button";
 import { Timer, Trash2 } from "lucide-react";
 import type { Session } from "@/lib/storage";
+import { useTranslation } from "react-i18next";
+import { DATE_LOCALES, type SupportedLanguage } from "@/i18n";
 
 interface SessionHistoryProps {
   children?: React.ReactNode;
@@ -37,7 +39,7 @@ interface GroupedSessions {
   sessions: Session[];
 }
 
-function groupByDay(sessions: Session[]): GroupedSessions[] {
+function groupByDay(sessions: Session[], todayLabel: string, yesterdayLabel: string, dateLocale: string): GroupedSessions[] {
   const today = new Date();
   today.setHours(0, 0, 0, 0);
   const yesterday = new Date(today);
@@ -52,13 +54,13 @@ function groupByDay(sessions: Session[]): GroupedSessions[] {
     let label: string;
     let key: string;
     if (date.getTime() === today.getTime()) {
-      label = "Heute";
+      label = todayLabel;
       key = "today";
     } else if (date.getTime() === yesterday.getTime()) {
-      label = "Gestern";
+      label = yesterdayLabel;
       key = "yesterday";
     } else {
-      label = date.toLocaleDateString("de-DE", {
+      label = date.toLocaleDateString(dateLocale, {
         day: "2-digit",
         month: "2-digit",
         year: "numeric",
@@ -75,13 +77,6 @@ function groupByDay(sessions: Session[]): GroupedSessions[] {
   return Array.from(groups.values());
 }
 
-function formatTime(isoString: string): string {
-  return new Date(isoString).toLocaleTimeString("de-DE", {
-    hour: "2-digit",
-    minute: "2-digit",
-  });
-}
-
 export function SessionHistory({
   children,
   sessions,
@@ -92,7 +87,20 @@ export function SessionHistory({
   open,
   onOpenChange,
 }: SessionHistoryProps) {
-  const grouped = useMemo(() => groupByDay(sessions), [sessions]);
+  const { t, i18n } = useTranslation();
+  const dateLocale = DATE_LOCALES[i18n.language as SupportedLanguage] ?? "en-US";
+
+  const formatTime = (isoString: string): string => {
+    return new Date(isoString).toLocaleTimeString(dateLocale, {
+      hour: "2-digit",
+      minute: "2-digit",
+    });
+  };
+
+  const grouped = useMemo(
+    () => groupByDay(sessions, t("sessions.today"), t("sessions.yesterday"), dateLocale),
+    [sessions, t, dateLocale],
+  );
   const [confirmOpen, setConfirmOpen] = useState(false);
 
   return (
@@ -100,23 +108,23 @@ export function SessionHistory({
       {children && <DialogTrigger asChild>{children}</DialogTrigger>}
       <DialogContent className="max-h-[80vh] flex flex-col">
         <DialogHeader>
-          <DialogTitle>Session-Verlauf</DialogTitle>
+          <DialogTitle>{t("sessions.history")}</DialogTitle>
         </DialogHeader>
 
         <div className="rounded-lg bg-muted/50 p-4 flex items-center gap-4">
           <Timer className="h-8 w-8 text-primary" />
           <div>
             <p className="text-lg font-semibold">
-              {todaySessions} {todaySessions === 1 ? "Pomodoro" : "Pomodoros"} heute
+              {t("sessions.pomodorosToday", { count: todaySessions })}
             </p>
-            <p className="text-sm text-muted-foreground">{todayMinutes} Minuten Fokuszeit</p>
+            <p className="text-sm text-muted-foreground">{t("sessions.focusMinutes", { count: todayMinutes })}</p>
           </div>
         </div>
 
         <div className="overflow-y-auto flex-1 space-y-4 pt-2">
           {sessions.length === 0 ? (
             <p className="text-sm text-muted-foreground text-center py-8">
-              Noch keine Sessions abgeschlossen.
+              {t("sessions.noSessions")}
             </p>
           ) : (
             grouped.map((group) => (
@@ -156,26 +164,25 @@ export function SessionHistory({
               <AlertDialogTrigger asChild>
                 <Button variant="ghost" size="sm" className="w-full text-muted-foreground hover:text-destructive">
                   <Trash2 className="h-4 w-4" />
-                  Alle löschen
+                  {t("sessions.deleteAll")}
                 </Button>
               </AlertDialogTrigger>
               <AlertDialogContent>
                 <AlertDialogHeader>
-                  <AlertDialogTitle>Alle Sessions löschen?</AlertDialogTitle>
+                  <AlertDialogTitle>{t("sessions.deleteAllConfirm")}</AlertDialogTitle>
                   <AlertDialogDescription>
-                    Damit werden alle {sessions.length} Sessions unwiderruflich gelöscht.
-                    Diese Aktion kann nicht rückgängig gemacht werden.
+                    {t("sessions.deleteAllDescription", { count: sessions.length })}
                   </AlertDialogDescription>
                 </AlertDialogHeader>
                 <AlertDialogFooter>
-                  <AlertDialogCancel>Abbrechen</AlertDialogCancel>
+                  <AlertDialogCancel>{t("common.cancel")}</AlertDialogCancel>
                   <AlertDialogAction
                     onClick={() => {
                       onClearSessions();
                       setConfirmOpen(false);
                     }}
                   >
-                    Alle löschen
+                    {t("sessions.deleteAll")}
                   </AlertDialogAction>
                 </AlertDialogFooter>
               </AlertDialogContent>

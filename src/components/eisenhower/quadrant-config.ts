@@ -2,8 +2,8 @@ import type { EisenhowerQuadrant } from "@/lib/storage";
 
 export interface QuadrantConfig {
   key: EisenhowerQuadrant;
-  label: string;
-  subtitle: string;
+  labelKey: string;
+  subtitleKey: string;
   colorClass: string;
   bgClass: string;
   borderClass: string;
@@ -13,8 +13,8 @@ export interface QuadrantConfig {
 export const QUADRANTS: QuadrantConfig[] = [
   {
     key: "urgent-important",
-    label: "Wichtig & Dringend",
-    subtitle: "Sofort erledigen",
+    labelKey: "eisenhower.q1Label",
+    subtitleKey: "eisenhower.q1Subtitle",
     colorClass: "text-red-600 dark:text-red-400",
     bgClass: "bg-red-50 dark:bg-red-950/30",
     borderClass: "border-red-200 dark:border-red-900",
@@ -22,8 +22,8 @@ export const QUADRANTS: QuadrantConfig[] = [
   },
   {
     key: "not-urgent-important",
-    label: "Wichtig & Nicht Dringend",
-    subtitle: "Einplanen",
+    labelKey: "eisenhower.q2Label",
+    subtitleKey: "eisenhower.q2Subtitle",
     colorClass: "text-blue-600 dark:text-blue-400",
     bgClass: "bg-blue-50 dark:bg-blue-950/30",
     borderClass: "border-blue-200 dark:border-blue-900",
@@ -31,8 +31,8 @@ export const QUADRANTS: QuadrantConfig[] = [
   },
   {
     key: "urgent-not-important",
-    label: "Nicht Wichtig & Dringend",
-    subtitle: "Delegieren",
+    labelKey: "eisenhower.q3Label",
+    subtitleKey: "eisenhower.q3Subtitle",
     colorClass: "text-amber-600 dark:text-amber-400",
     bgClass: "bg-amber-50 dark:bg-amber-950/30",
     borderClass: "border-amber-200 dark:border-amber-900",
@@ -40,8 +40,8 @@ export const QUADRANTS: QuadrantConfig[] = [
   },
   {
     key: "not-urgent-not-important",
-    label: "Nicht Wichtig & Nicht Dringend",
-    subtitle: "Eliminieren",
+    labelKey: "eisenhower.q4Label",
+    subtitleKey: "eisenhower.q4Subtitle",
     colorClass: "text-gray-500 dark:text-gray-400",
     bgClass: "bg-gray-50 dark:bg-gray-900/30",
     borderClass: "border-gray-200 dark:border-gray-800",
@@ -53,7 +53,8 @@ export const QUADRANT_MAP = Object.fromEntries(
   QUADRANTS.map((q) => [q.key, q]),
 ) as Record<EisenhowerQuadrant, QuadrantConfig>;
 
-export const QUADRANT_OPTIONS: { value: EisenhowerQuadrant; label: string }[] = QUADRANTS.map((q) => ({
+/** Used in select dropdowns — labels resolved at render time via t(). */
+export const QUADRANT_OPTIONS: { value: EisenhowerQuadrant; labelKey: string }[] = QUADRANTS.map((q) => ({
   value: q.key,
-  label: q.label,
+  labelKey: q.labelKey,
 }));

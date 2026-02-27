@@ -1,6 +1,7 @@
 import { useState, useRef, useCallback, useEffect } from "react";
 import { getTimerState, saveTimerState, clearTimerState } from "@/lib/storage";
 import { playCompletionChime } from "@/lib/chime";
+import i18n from "@/i18n";
 
 export type TimerStatus = "idle" | "running" | "paused" | "overtime" | "completed";
 
@@ -102,7 +103,7 @@ export function useTimer({
         setStatus("overtime");
         if (!silentModeRef.current) playCompletionChime();
         if (Notification.permission === "granted") {
-          new Notification("Pomodoro fertig!", { body: "Overtime läuft — Zeit für eine Pause.", silent: silentModeRef.current });
+          new Notification(i18n.t("notifications.pomodoroFinished"), { body: i18n.t("notifications.pomodoroOvertimeBody"), silent: silentModeRef.current });
         }
         return;
       }
@@ -114,7 +115,7 @@ export function useTimer({
         clearTimerState();
         if (!silentModeRef.current) playCompletionChime();
         if (Notification.permission === "granted") {
-          new Notification("Overtime beendet!", { body: "Maximale Overtime erreicht.", silent: silentModeRef.current });
+          new Notification(i18n.t("notifications.overtimeFinished"), { body: i18n.t("notifications.overtimeMaxReached"), silent: silentModeRef.current });
         }
         return;
       }
@@ -188,7 +189,7 @@ export function useTimer({
         clearTimerState();
         if (!silentModeRef.current) playCompletionChime();
         if (Notification.permission === "granted") {
-          new Notification("Overtime beendet!", { body: "Maximale Overtime erreicht.", silent: silentModeRef.current });
+          new Notification(i18n.t("notifications.overtimeFinished"), { body: i18n.t("notifications.overtimeMaxReached"), silent: silentModeRef.current });
         }
       }
     }

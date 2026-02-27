@@ -4,6 +4,7 @@ import { UnsortedTodos } from "@/components/eisenhower/UnsortedTodos";
 import { EditTodoDialog } from "@/components/eisenhower/EditTodoDialog";
 import { AddTodoWithQuadrant } from "@/components/eisenhower/AddTodoWithQuadrant";
 import type { Todo, EisenhowerQuadrant } from "@/lib/storage";
+import { useTranslation } from "react-i18next";
 
 interface EisenhowerPageProps {
   todos: Todo[];
@@ -20,6 +21,7 @@ export function EisenhowerPage({
   toggleDone,
   updateTodo,
 }: EisenhowerPageProps) {
+  const { t } = useTranslation();
   const [editTodo, setEditTodo] = useState<Todo | null>(null);
   const [editOpen, setEditOpen] = useState(false);
   const [dragTodoId, setDragTodoId] = useState<string | null>(null);
@@ -70,7 +72,7 @@ export function EisenhowerPage({
   return (
     <main className="flex-1 flex flex-col gap-4 px-4 py-6 max-w-5xl mx-auto w-full min-h-0" onDragEnd={handleDragEnd}>
       <div className="flex items-center justify-between gap-4 flex-wrap">
-        <h1 className="text-lg font-bold">Eisenhower-Matrix</h1>
+        <h1 className="text-lg font-bold">{t("eisenhower.matrix")}</h1>
       </div>
 
       <AddTodoWithQuadrant onAdd={addTodo} />

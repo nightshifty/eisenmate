@@ -308,11 +308,11 @@ describe("parseExportFile", () => {
   });
 
   it("throws on invalid JSON", () => {
-    expect(() => parseExportFile("{broken")).toThrow("kein gültiges JSON");
+    expect(() => parseExportFile("{broken")).toThrow("storage.invalidJson");
   });
 
   it("throws on valid JSON but invalid structure", () => {
-    expect(() => parseExportFile(JSON.stringify({ foo: "bar" }))).toThrow("keine gültige Eisenmate-Backup-Datei");
+    expect(() => parseExportFile(JSON.stringify({ foo: "bar" }))).toThrow("storage.invalidBackup");
   });
 });
 

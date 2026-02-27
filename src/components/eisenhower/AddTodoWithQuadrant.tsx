@@ -4,12 +4,14 @@ import { Input } from "@/components/ui/input";
 import { Plus } from "lucide-react";
 import type { EisenhowerQuadrant } from "@/lib/storage";
 import { QUADRANT_OPTIONS } from "./quadrant-config";
+import { useTranslation } from "react-i18next";
 
 interface AddTodoWithQuadrantProps {
   onAdd: (content: string, estimationMinutes: number, quadrant?: EisenhowerQuadrant | null) => void;
 }
 
 export function AddTodoWithQuadrant({ onAdd }: AddTodoWithQuadrantProps) {
+  const { t } = useTranslation();
   const [content, setContent] = useState("");
   const [estimation, setEstimation] = useState("25");
   const [quadrant, setQuadrant] = useState<EisenhowerQuadrant | "">("");
@@ -25,7 +27,7 @@ export function AddTodoWithQuadrant({ onAdd }: AddTodoWithQuadrantProps) {
   return (
     <form onSubmit={handleSubmit} className="flex gap-2 flex-wrap sm:flex-nowrap">
       <Input
-        placeholder="Neue Aufgabe..."
+        placeholder={t("todos.newTask")}
         value={content}
         onChange={(e) => setContent(e.target.value)}
         className="flex-1 min-w-[150px]"
@@ -44,10 +46,10 @@ export function AddTodoWithQuadrant({ onAdd }: AddTodoWithQuadrantProps) {
         onChange={(e) => setQuadrant(e.target.value as EisenhowerQuadrant | "")}
         className="h-9 rounded-md border border-input bg-transparent px-2 text-sm shadow-xs focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px] outline-none min-w-[140px]"
       >
-        <option value="">Unsortiert</option>
+        <option value="">{t("eisenhower.unsorted")}</option>
         {QUADRANT_OPTIONS.map((opt) => (
           <option key={opt.value} value={opt.value}>
-            {opt.label}
+            {t(opt.labelKey)}
           </option>
         ))}
       </select>

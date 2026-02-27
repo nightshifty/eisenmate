@@ -5,6 +5,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
+import { useTranslation } from "react-i18next";
 
 interface HowToUseProps {
   children?: React.ReactNode;
@@ -13,22 +14,24 @@ interface HowToUseProps {
 }
 
 export function HowToUse({ children, open, onOpenChange }: HowToUseProps) {
+  const { t } = useTranslation();
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       {children && <DialogTrigger asChild>{children}</DialogTrigger>}
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>So benutzt du Eisenmate</DialogTitle>
+          <DialogTitle>{t("help.howToTitle")}</DialogTitle>
         </DialogHeader>
         <div className="space-y-3 text-sm text-muted-foreground">
           <ul className="list-disc list-inside space-y-1">
-            <li>Erstelle Aufgaben in deiner Todo-Liste</li>
-            <li>Gib eine Zeitschätzung für jede Aufgabe an</li>
-            <li>Wähle eine Aufgabe aus und starte den Timer</li>
-            <li>Die aufgewendete Zeit wird automatisch erfasst</li>
-            <li>Du kannst die Timer-Dauer in den Einstellungen ändern</li>
-            <li>Bei Ablauf ertönt ein akustisches Signal</li>
-            <li>Alle Daten werden lokal in deinem Browser gespeichert</li>
+            <li>{t("help.howTo1")}</li>
+            <li>{t("help.howTo2")}</li>
+            <li>{t("help.howTo3")}</li>
+            <li>{t("help.howTo4")}</li>
+            <li>{t("help.howTo5")}</li>
+            <li>{t("help.howTo6")}</li>
+            <li>{t("help.howTo7")}</li>
           </ul>
         </div>
       </DialogContent>

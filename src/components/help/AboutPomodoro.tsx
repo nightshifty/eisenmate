@@ -5,6 +5,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
+import { useTranslation } from "react-i18next";
 
 interface AboutPomodoroProps {
   children?: React.ReactNode;
@@ -13,33 +14,26 @@ interface AboutPomodoroProps {
 }
 
 export function AboutPomodoro({ children, open, onOpenChange }: AboutPomodoroProps) {
+  const { t } = useTranslation();
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       {children && <DialogTrigger asChild>{children}</DialogTrigger>}
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>Was ist die Pomodoro-Technik?</DialogTitle>
+          <DialogTitle>{t("help.aboutTitle")}</DialogTitle>
         </DialogHeader>
         <div className="space-y-3 text-sm text-muted-foreground">
-          <p>
-            Die Pomodoro-Technik ist eine Zeitmanagement-Methode, die in den späten 1980er Jahren
-            von Francesco Cirillo entwickelt wurde.
-          </p>
-          <p>
-            Die Methode verwendet einen Timer, um Arbeit in Intervalle aufzuteilen,
-            traditionell 25 Minuten lang, getrennt durch kurze Pausen.
-          </p>
+          <p>{t("help.aboutP1")}</p>
+          <p>{t("help.aboutP2")}</p>
           <ol className="list-decimal list-inside space-y-1">
-            <li>Wähle eine Aufgabe aus</li>
-            <li>Stelle den Timer auf 25 Minuten</li>
-            <li>Arbeite an der Aufgabe bis der Timer klingelt</li>
-            <li>Mache eine kurze Pause (5 Minuten)</li>
-            <li>Nach 4 Pomodoros: längere Pause (15-30 Minuten)</li>
+            <li>{t("help.aboutStep1")}</li>
+            <li>{t("help.aboutStep2")}</li>
+            <li>{t("help.aboutStep3")}</li>
+            <li>{t("help.aboutStep4")}</li>
+            <li>{t("help.aboutStep5")}</li>
           </ol>
-          <p>
-            Der Name "Pomodoro" kommt vom italienischen Wort für Tomate - Cirillo benutzte
-            eine tomatenförmige Küchenuhr als Student.
-          </p>
+          <p>{t("help.aboutP3")}</p>
         </div>
       </DialogContent>
     </Dialog>

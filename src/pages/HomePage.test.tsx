@@ -56,8 +56,8 @@ describe("HomePage — overtime session records actual duration", () => {
     // Advance 2 more minutes into overtime
     act(() => { vi.advanceTimersByTime(120_000); });
 
-    // User clicks "Abschließen" to finish the overtime pomodoro
-    fireEvent.click(screen.getByRole("button", { name: /abschließen/i }));
+    // User clicks "Finish" to finish the overtime pomodoro
+    fireEvent.click(screen.getByRole("button", { name: /finish/i }));
 
     // Session should now be created with total duration: 1 (planned) + 2 (overtime) = 3 minutes
     expect(addSession).toHaveBeenCalledTimes(1);
@@ -77,7 +77,7 @@ describe("HomePage — overtime session records actual duration", () => {
     expect(addSession).not.toHaveBeenCalled();
 
     // Immediately click finish — 0 overtime minutes (< 60s)
-    fireEvent.click(screen.getByRole("button", { name: /abschließen/i }));
+    fireEvent.click(screen.getByRole("button", { name: /finish/i }));
 
     // Session should be created with just the planned duration (1 + 0)
     expect(addSession).toHaveBeenCalledTimes(1);
@@ -154,7 +154,7 @@ describe("HomePage — double-click to override pomodoro duration", () => {
     act(() => { vi.advanceTimersByTime(60_000); });
 
     // Finish
-    fireEvent.click(screen.getByRole("button", { name: /abschließen/i }));
+    fireEvent.click(screen.getByRole("button", { name: /finish/i }));
 
     // Session should record: 2 (overridden pomodoro) + 1 (overtime) = 3
     // This proves the override (2) is used instead of the settings value (1)
@@ -180,7 +180,7 @@ describe("HomePage — double-click to override pomodoro duration", () => {
     act(() => { vi.advanceTimersByTime(61_000); });
 
     // Early finish
-    fireEvent.click(screen.getByRole("button", { name: /abschließen/i }));
+    fireEvent.click(screen.getByRole("button", { name: /finish/i }));
 
     // Session should record 1 minute of elapsed time
     expect(addSession).toHaveBeenCalledTimes(1);
@@ -203,13 +203,13 @@ describe("HomePage — double-click to override pomodoro duration", () => {
     // Start, go into overtime, finish
     fireEvent.click(screen.getByRole("button", { name: /start/i }));
     act(() => { vi.advanceTimersByTime(121_000); });
-    fireEvent.click(screen.getByRole("button", { name: /abschließen/i }));
+    fireEvent.click(screen.getByRole("button", { name: /finish/i }));
 
-    // Dismiss the completion dialog (no active task → "Pomodoro abschließen")
-    fireEvent.click(screen.getByRole("button", { name: /pomodoro abschließen$/i }));
+    // Dismiss the completion dialog (no active task → "Finish Pomodoro")
+    fireEvent.click(screen.getByRole("button", { name: /finish pomodoro$/i }));
 
     // Now in break phase — skip break
-    fireEvent.click(screen.getByRole("button", { name: /überspringen/i }));
+    fireEvent.click(screen.getByRole("button", { name: /skip/i }));
 
     // Back to pomodoro idle — timer should show the original 1-minute settings value, not the 2-minute override
     expect(screen.getByText("01:00")).toBeInTheDocument();
@@ -229,7 +229,7 @@ describe("HomePage — double-click to override pomodoro duration", () => {
     // Start and then cancel
     fireEvent.click(screen.getByRole("button", { name: /start/i }));
     act(() => { vi.advanceTimersByTime(5_000); });
-    fireEvent.click(screen.getByRole("button", { name: /abbrechen/i }));
+    fireEvent.click(screen.getByRole("button", { name: /cancel/i }));
 
     // Timer should show the original 1-minute settings value
     expect(screen.getByText("01:00")).toBeInTheDocument();

@@ -2,6 +2,7 @@ import { Button } from "@/components/ui/button";
 import { Trash2, Clock, Check, Pencil, GripVertical } from "lucide-react";
 import type { Todo } from "@/lib/storage";
 import { cn } from "@/lib/utils";
+import { useTranslation } from "react-i18next";
 
 interface EisenhowerTodoItemProps {
   todo: Todo;
@@ -18,6 +19,8 @@ export function EisenhowerTodoItem({
   onEdit,
   onDragStart,
 }: EisenhowerTodoItemProps) {
+  const { t } = useTranslation();
+
   return (
     <div
       draggable
@@ -44,7 +47,7 @@ export function EisenhowerTodoItem({
         </p>
         <div className="flex items-center gap-1 text-xs text-muted-foreground">
           <Clock className="h-2.5 w-2.5" />
-          <span>{todo.timeSpentMinutes}/{todo.estimationMinutes} Min.</span>
+          <span>{todo.timeSpentMinutes}/{todo.estimationMinutes} {t("todos.min")}</span>
         </div>
       </div>
 

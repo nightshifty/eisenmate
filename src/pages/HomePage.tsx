@@ -5,6 +5,7 @@ import type { Todo } from "@/hooks/useTodos";
 import type { EisenhowerQuadrant } from "@/lib/storage";
 import { getTimerState, getTodos } from "@/lib/storage";
 import type { TimerStatus } from "@/hooks/useTimer";
+import { useTranslation } from "react-i18next";
 
 type CombinedTimerStatus = TimerStatus | "break";
 
@@ -53,6 +54,7 @@ export function HomePage({
   onSessionTimerStart,
   onSessionTimerRecordPomodoro,
 }: HomePageProps) {
+  const { t } = useTranslation();
   const [activeTodo, setActiveTodo] = useState<Todo | null>(getRestoredTodo);
   const [timerStatus, setTimerStatus] = useState<CombinedTimerStatus>("idle");
 
@@ -81,7 +83,7 @@ export function HomePage({
 
     addSession({
       todoId: activeTodo?.id ?? null,
-      todoContent: activeTodo?.content ?? "Kein Todo",
+      todoContent: activeTodo?.content ?? t("todos.noTodo"),
       durationMinutes: elapsedMinutes,
       completedAt: new Date().toISOString(),
     });
@@ -90,7 +92,7 @@ export function HomePage({
     if (sessionTimerEnabled && elapsedMinutes > 0) {
       onSessionTimerRecordPomodoro(elapsedMinutes, activeTodo?.content ?? null);
     }
-  }, [activeTodo, trackTime, addSession, sessionTimerEnabled, onSessionTimerRecordPomodoro]);
+  }, [activeTodo, trackTime, addSession, sessionTimerEnabled, onSessionTimerRecordPomodoro, t]);
 
   const handleOvertimeStop = useCallback((overtimeMinutes: number, effectivePomodoroMinutes: number) => {
     if (activeTodo && overtimeMinutes > 0) {
@@ -100,7 +102,7 @@ export function HomePage({
     const totalMinutes = effectivePomodoroMinutes + overtimeMinutes;
     addSession({
       todoId: activeTodo?.id ?? null,
-      todoContent: activeTodo?.content ?? "Kein Todo",
+      todoContent: activeTodo?.content ?? t("todos.noTodo"),
       durationMinutes: totalMinutes,
       completedAt: new Date().toISOString(),
     });
@@ -109,7 +111,7 @@ export function HomePage({
     if (sessionTimerEnabled) {
       onSessionTimerRecordPomodoro(totalMinutes, activeTodo?.content ?? null);
     }
-  }, [activeTodo, trackTime, addSession, sessionTimerEnabled, onSessionTimerRecordPomodoro]);
+  }, [activeTodo, trackTime, addSession, sessionTimerEnabled, onSessionTimerRecordPomodoro, t]);
 
   const handleStatusChange = useCallback((status: CombinedTimerStatus) => {
     setTimerStatus(status);

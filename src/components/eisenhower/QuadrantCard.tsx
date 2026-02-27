@@ -3,6 +3,7 @@ import type { Todo } from "@/lib/storage";
 import type { QuadrantConfig } from "./quadrant-config";
 import { EisenhowerTodoItem } from "./EisenhowerTodoItem";
 import { cn } from "@/lib/utils";
+import { useTranslation } from "react-i18next";
 
 interface QuadrantCardProps {
   config: QuadrantConfig;
@@ -23,6 +24,7 @@ export function QuadrantCard({
   onDragStart,
   onDrop,
 }: QuadrantCardProps) {
+  const { t } = useTranslation();
   const [isDragOver, setIsDragOver] = useState(false);
 
   const handleDragOver = (e: React.DragEvent) => {
@@ -60,8 +62,8 @@ export function QuadrantCard({
     
     >
       <div className="mb-3">
-        <h3 className={cn("text-sm font-bold", config.colorClass)}>{config.label}</h3>
-        <p className="text-xs text-muted-foreground">{config.subtitle}</p>
+        <h3 className={cn("text-sm font-bold", config.colorClass)}>{t(config.labelKey)}</h3>
+        <p className="text-xs text-muted-foreground">{t(config.subtitleKey)}</p>
       </div>
 
       <div className="flex-1 space-y-1.5 overflow-y-auto">
@@ -94,7 +96,7 @@ export function QuadrantCard({
 
         {todos.length === 0 && (
           <p className="text-xs text-muted-foreground text-center py-4">
-            Aufgaben hierher ziehen
+            {t("eisenhower.dragHere")}
           </p>
         )}
       </div>

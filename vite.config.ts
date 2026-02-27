@@ -15,10 +15,9 @@ export default defineConfig({
         globPatterns: ["**/*.{js,css,html,ico,png,svg,woff,woff2}"],
       },
       manifest: {
-        name: "EisenMate - Pomodoro Timer",
+        name: "EisenMate",
         short_name: "EisenMate",
-        description:
-          "Ein Pomodoro-Timer mit Eisenhower-Matrix zur Aufgabenverwaltung",
+        description: "Pomodoro Timer & Eisenhower Matrix",
         theme_color: "#1A202C",
         background_color: "#1A202C",
         display: "standalone",

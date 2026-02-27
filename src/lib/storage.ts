@@ -254,10 +254,10 @@ export function parseExportFile(jsonString: string): ExportData {
   try {
     parsed = JSON.parse(jsonString);
   } catch {
-    throw new Error("Die Datei enthält kein gültiges JSON.");
+    throw new Error("storage.invalidJson");
   }
   if (!validateExportData(parsed)) {
-    throw new Error("Die Datei ist keine gültige Eisenmate-Backup-Datei.");
+    throw new Error("storage.invalidBackup");
   }
   return parsed;
 }

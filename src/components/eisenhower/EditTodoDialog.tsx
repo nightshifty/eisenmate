@@ -12,6 +12,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import type { Todo, EisenhowerQuadrant } from "@/lib/storage";
 import { QUADRANT_OPTIONS } from "./quadrant-config";
+import { useTranslation } from "react-i18next";
 
 interface EditTodoDialogProps {
   todo: Todo | null;
@@ -25,6 +26,7 @@ function EditForm({ todo, onSave, onCancel }: {
   onSave: (todoId: string, patch: { content?: string; estimationMinutes?: number; quadrant?: EisenhowerQuadrant | null }) => void;
   onCancel: () => void;
 }) {
+  const { t } = useTranslation();
   const [content, setContent] = useState(todo.content);
   const [estimation, setEstimation] = useState(String(todo.estimationMinutes));
   const [quadrant, setQuadrant] = useState<EisenhowerQuadrant | "">(todo.quadrant ?? "");
@@ -42,17 +44,17 @@ function EditForm({ todo, onSave, onCancel }: {
     <>
       <div className="grid gap-4 py-2">
         <div className="grid gap-2">
-          <Label htmlFor="edit-content">Aufgabe</Label>
+          <Label htmlFor="edit-content">{t("eisenhower.taskLabel")}</Label>
           <Input
             id="edit-content"
             value={content}
             onChange={(e) => setContent(e.target.value)}
-            placeholder="Aufgabe beschreiben..."
+            placeholder={t("eisenhower.taskPlaceholder")}
           />
         </div>
 
         <div className="grid gap-2">
-          <Label htmlFor="edit-estimation">Schätzung (Minuten)</Label>
+          <Label htmlFor="edit-estimation">{t("eisenhower.estimation")}</Label>
           <Input
             id="edit-estimation"
             type="number"
@@ -64,17 +66,17 @@ function EditForm({ todo, onSave, onCancel }: {
         </div>
 
         <div className="grid gap-2">
-          <Label htmlFor="edit-quadrant">Quadrant</Label>
+          <Label htmlFor="edit-quadrant">{t("eisenhower.quadrant")}</Label>
           <select
             id="edit-quadrant"
             value={quadrant}
             onChange={(e) => setQuadrant(e.target.value as EisenhowerQuadrant | "")}
             className="h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-xs focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px] outline-none"
           >
-            <option value="">Unsortiert</option>
+            <option value="">{t("eisenhower.unsorted")}</option>
             {QUADRANT_OPTIONS.map((opt) => (
               <option key={opt.value} value={opt.value}>
-                {opt.label}
+                {t(opt.labelKey)}
               </option>
             ))}
           </select>
@@ -83,10 +85,10 @@ function EditForm({ todo, onSave, onCancel }: {
 
       <DialogFooter>
         <Button variant="outline" onClick={onCancel}>
-          Abbrechen
+          {t("common.cancel")}
         </Button>
         <Button onClick={handleSave} disabled={!content.trim()}>
-          Speichern
+          {t("eisenhower.save")}
         </Button>
       </DialogFooter>
     </>
@@ -94,6 +96,7 @@ function EditForm({ todo, onSave, onCancel }: {
 }
 
 export function EditTodoDialog({ todo, open, onOpenChange, onSave }: EditTodoDialogProps) {
+  const { t } = useTranslation();
   const handleSave = (todoId: string, patch: { content?: string; estimationMinutes?: number; quadrant?: EisenhowerQuadrant | null }) => {
     onSave(todoId, patch);
     onOpenChange(false);
@@ -103,9 +106,9 @@ export function EditTodoDialog({ todo, open, onOpenChange, onSave }: EditTodoDia
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>Aufgabe bearbeiten</DialogTitle>
+          <DialogTitle>{t("eisenhower.editTask")}</DialogTitle>
           <DialogDescription>
-            Bearbeite den Namen, die Zeitschätzung und den Quadranten.
+            {t("eisenhower.editTaskDescription")}
           </DialogDescription>
         </DialogHeader>
 

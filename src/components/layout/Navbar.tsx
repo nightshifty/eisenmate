@@ -5,17 +5,22 @@ import {
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuSeparator,
+  DropdownMenuSub,
+  DropdownMenuSubContent,
+  DropdownMenuSubTrigger,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { TimerSettings } from "@/components/timer/TimerSettings";
 import { AboutPomodoro } from "@/components/help/AboutPomodoro";
 import { HowToUse } from "@/components/help/HowToUse";
 import { SessionHistory } from "@/components/sessions/SessionHistory";
-import { Settings, History, Sun, Moon, Timer, LayoutGrid, Volume2, VolumeOff, MoreVertical, BookOpen, Info } from "lucide-react";
+import { Settings, History, Sun, Moon, Timer, LayoutGrid, Volume2, VolumeOff, MoreVertical, BookOpen, Info, Check } from "lucide-react";
 import type { Session, UserSettings } from "@/lib/storage";
 import type { Page } from "@/App";
 import { cn } from "@/lib/utils";
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
+import { SUPPORTED_LANGUAGES } from "@/i18n";
 
 interface NavbarProps {
   activePage: Page;
@@ -57,6 +62,7 @@ export function Navbar({
   silentMode,
   onToggleSilentMode,
 }: NavbarProps) {
+  const { t, i18n } = useTranslation();
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [historyOpen, setHistoryOpen] = useState(false);
   const [aboutOpen, setAboutOpen] = useState(false);
@@ -94,7 +100,7 @@ export function Navbar({
               onClick={() => onPageChange("eisenhower")}
             >
               <LayoutGrid className="h-4 w-4" />
-              Aufgaben
+              {t("navbar.tasks")}
             </Button>
           </div>
         </div>
@@ -108,36 +114,56 @@ export function Navbar({
           <DropdownMenuContent align="end" className="w-52">
             <DropdownMenuItem disabled={timerRunning} onSelect={() => setSettingsOpen(true)}>
               <Settings className="h-4 w-4" />
-              Einstellungen
+              {t("navbar.settings")}
             </DropdownMenuItem>
 
             <DropdownMenuItem onSelect={() => setHistoryOpen(true)}>
               <History className="h-4 w-4" />
-              Verlauf
+              {t("navbar.history")}
             </DropdownMenuItem>
 
             <DropdownMenuSeparator />
 
             <DropdownMenuItem onSelect={onToggleSilentMode}>
               {silentMode ? <VolumeOff className="h-4 w-4" /> : <Volume2 className="h-4 w-4" />}
-              {silentMode ? "Ton einschalten" : "Stummschalten"}
+              {silentMode ? t("navbar.soundOn") : t("navbar.soundOff")}
             </DropdownMenuItem>
 
             <DropdownMenuItem onSelect={onToggleTheme}>
               {theme === "dark" ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
-              {theme === "dark" ? "Helles Design" : "Dunkles Design"}
+              {theme === "dark" ? t("navbar.lightTheme") : t("navbar.darkTheme")}
             </DropdownMenuItem>
+
+            <DropdownMenuSub>
+              <DropdownMenuSubTrigger>
+                <span>{SUPPORTED_LANGUAGES.find((l) => l.code === i18n.language)?.flag}</span>
+                {t("navbar.language")}
+              </DropdownMenuSubTrigger>
+              <DropdownMenuSubContent>
+                {SUPPORTED_LANGUAGES.map((lang) => (
+                  <DropdownMenuItem
+                    key={lang.code}
+                    onSelect={() => i18n.changeLanguage(lang.code)}
+                  >
+                    {i18n.language === lang.code && <Check className="h-4 w-4" />}
+                    {i18n.language !== lang.code && <span className="w-4" />}
+                    <span>{lang.flag}</span>
+                    {lang.label}
+                  </DropdownMenuItem>
+                ))}
+              </DropdownMenuSubContent>
+            </DropdownMenuSub>
 
             <DropdownMenuSeparator />
 
             <DropdownMenuItem onSelect={() => setAboutOpen(true)}>
               <Info className="h-4 w-4" />
-              Über Pomodoro
+              {t("navbar.aboutPomodoro")}
             </DropdownMenuItem>
 
             <DropdownMenuItem onSelect={() => setHowToOpen(true)}>
               <BookOpen className="h-4 w-4" />
-              Anleitung
+              {t("navbar.howToUse")}
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
