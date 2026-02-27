@@ -22,12 +22,14 @@ import { Timer, Trash2 } from "lucide-react";
 import type { Session } from "@/lib/storage";
 
 interface SessionHistoryProps {
-  children: React.ReactNode;
+  children?: React.ReactNode;
   sessions: Session[];
   todaySessions: number;
   todayMinutes: number;
   onDeleteSession: (id: string) => void;
   onClearSessions: () => void;
+  open?: boolean;
+  onOpenChange?: (open: boolean) => void;
 }
 
 interface GroupedSessions {
@@ -87,13 +89,15 @@ export function SessionHistory({
   todayMinutes,
   onDeleteSession,
   onClearSessions,
+  open,
+  onOpenChange,
 }: SessionHistoryProps) {
   const grouped = useMemo(() => groupByDay(sessions), [sessions]);
   const [confirmOpen, setConfirmOpen] = useState(false);
 
   return (
-    <Dialog>
-      <DialogTrigger asChild>{children}</DialogTrigger>
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      {children && <DialogTrigger asChild>{children}</DialogTrigger>}
       <DialogContent className="max-h-[80vh] flex flex-col">
         <DialogHeader>
           <DialogTitle>Session-Verlauf</DialogTitle>

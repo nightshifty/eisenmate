@@ -7,13 +7,15 @@ import {
 } from "@/components/ui/dialog";
 
 interface AboutPomodoroProps {
-  children: React.ReactNode;
+  children?: React.ReactNode;
+  open?: boolean;
+  onOpenChange?: (open: boolean) => void;
 }
 
-export function AboutPomodoro({ children }: AboutPomodoroProps) {
+export function AboutPomodoro({ children, open, onOpenChange }: AboutPomodoroProps) {
   return (
-    <Dialog>
-      <DialogTrigger asChild>{children}</DialogTrigger>
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      {children && <DialogTrigger asChild>{children}</DialogTrigger>}
       <DialogContent>
         <DialogHeader>
           <DialogTitle>Was ist die Pomodoro-Technik?</DialogTitle>

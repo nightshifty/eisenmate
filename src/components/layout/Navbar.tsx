@@ -4,16 +4,18 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { TimerSettings } from "@/components/timer/TimerSettings";
 import { AboutPomodoro } from "@/components/help/AboutPomodoro";
 import { HowToUse } from "@/components/help/HowToUse";
 import { SessionHistory } from "@/components/sessions/SessionHistory";
-import { HelpCircle, History, Sun, Moon, Timer, LayoutGrid, Volume2, VolumeOff } from "lucide-react";
+import { Settings, History, Sun, Moon, Timer, LayoutGrid, Volume2, VolumeOff, MoreVertical, BookOpen, Info } from "lucide-react";
 import type { Session, UserSettings } from "@/lib/storage";
 import type { Page } from "@/App";
 import { cn } from "@/lib/utils";
+import { useState } from "react";
 
 interface NavbarProps {
   activePage: Page;
@@ -54,6 +56,11 @@ export function Navbar({
   silentMode,
   onToggleSilentMode,
 }: NavbarProps) {
+  const [settingsOpen, setSettingsOpen] = useState(false);
+  const [historyOpen, setHistoryOpen] = useState(false);
+  const [aboutOpen, setAboutOpen] = useState(false);
+  const [howToOpen, setHowToOpen] = useState(false);
+
   return (
     <nav className="border-b bg-card">
       <div className="max-w-5xl mx-auto flex items-center justify-between px-4 h-14">
@@ -91,53 +98,71 @@ export function Navbar({
           </div>
         </div>
 
-        <div className="flex items-center gap-1">
-          <TimerSettings
-            currentSettings={settings}
-            onSave={onSaveSettings}
-            disabled={timerRunning}
-          />
-
-          <SessionHistory
-            sessions={sessions}
-            todaySessions={todaySessions}
-            todayMinutes={todayMinutes}
-            onDeleteSession={onDeleteSession}
-            onClearSessions={onClearSessions}
-          >
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
             <Button variant="ghost" size="icon">
-              <History className="h-5 w-5" />
+              <MoreVertical className="h-5 w-5" />
             </Button>
-          </SessionHistory>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end" className="w-52">
+            <DropdownMenuItem disabled={timerRunning} onSelect={() => setSettingsOpen(true)}>
+              <Settings className="h-4 w-4" />
+              Einstellungen
+            </DropdownMenuItem>
 
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="ghost" size="icon">
-                <HelpCircle className="h-5 w-5" />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
-              <AboutPomodoro>
-                <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
-                  Über Pomodoro
-                </DropdownMenuItem>
-              </AboutPomodoro>
-              <HowToUse>
-                <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
-                  Anleitung
-                </DropdownMenuItem>
-              </HowToUse>
-            </DropdownMenuContent>
-          </DropdownMenu>
+            <DropdownMenuItem onSelect={() => setHistoryOpen(true)}>
+              <History className="h-4 w-4" />
+              Verlauf
+            </DropdownMenuItem>
 
-          <Button variant="ghost" size="icon" onClick={onToggleSilentMode} title={silentMode ? "Ton einschalten" : "Stummschalten"}>
-            {silentMode ? <VolumeOff className="h-5 w-5" /> : <Volume2 className="h-5 w-5" />}
-          </Button>
+            <DropdownMenuSeparator />
 
-          <Button variant="ghost" size="icon" onClick={onToggleTheme}>
-            {theme === "dark" ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
-          </Button>
-        </div>
+            <DropdownMenuItem onSelect={onToggleSilentMode}>
+              {silentMode ? <VolumeOff className="h-4 w-4" /> : <Volume2 className="h-4 w-4" />}
+              {silentMode ? "Ton einschalten" : "Stummschalten"}
+            </DropdownMenuItem>
+
+            <DropdownMenuItem onSelect={onToggleTheme}>
+              {theme === "dark" ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
+              {theme === "dark" ? "Helles Design" : "Dunkles Design"}
+            </DropdownMenuItem>
+
+            <DropdownMenuSeparator />
+
+            <DropdownMenuItem onSelect={() => setAboutOpen(true)}>
+              <Info className="h-4 w-4" />
+              Über Pomodoro
+            </DropdownMenuItem>
+
+            <DropdownMenuItem onSelect={() => setHowToOpen(true)}>
+              <BookOpen className="h-4 w-4" />
+              Anleitung
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
+
+        {/* Dialogs rendered outside the dropdown */}
+        <TimerSettings
+          currentSettings={settings}
+          onSave={onSaveSettings}
+          disabled={timerRunning}
+          open={settingsOpen}
+          onOpenChange={setSettingsOpen}
+        />
+
+        <SessionHistory
+          sessions={sessions}
+          todaySessions={todaySessions}
+          todayMinutes={todayMinutes}
+          onDeleteSession={onDeleteSession}
+          onClearSessions={onClearSessions}
+          open={historyOpen}
+          onOpenChange={setHistoryOpen}
+        />
+
+        <AboutPomodoro open={aboutOpen} onOpenChange={setAboutOpen} />
+
+        <HowToUse open={howToOpen} onOpenChange={setHowToOpen} />
       </div>
     </nav>
   );

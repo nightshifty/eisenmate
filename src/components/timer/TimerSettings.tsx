@@ -22,25 +22,37 @@ interface TimerSettingsProps {
   };
   onSave: (patch: Partial<UserSettings>) => void;
   disabled?: boolean;
+  children?: React.ReactNode;
+  open?: boolean;
+  onOpenChange?: (open: boolean) => void;
 }
 
-export function TimerSettings({ currentSettings, onSave, disabled }: TimerSettingsProps) {
-  const [open, setOpen] = useState(false);
+export function TimerSettings({ currentSettings, onSave, disabled, children, open: controlledOpen, onOpenChange }: TimerSettingsProps) {
+  const [internalOpen, setInternalOpen] = useState(false);
+  const isControlled = controlledOpen !== undefined;
+  const open = isControlled ? controlledOpen : internalOpen;
+
   const [pomodoroMinutes, setPomodoroMinutes] = useState(String(currentSettings.pomodoroMinutes));
   const [breakMinutes, setBreakMinutes] = useState(String(currentSettings.breakMinutes));
   const [overtimeMax, setOvertimeMax] = useState(String(currentSettings.overtimeMaxMinutes));
   const [chimeInterval, setChimeInterval] = useState(String(currentSettings.overtimeChimeIntervalMinutes));
   const [allowEarlyFinish, setAllowEarlyFinish] = useState(currentSettings.allowEarlyFinish);
 
+  const resetForm = () => {
+    setPomodoroMinutes(String(currentSettings.pomodoroMinutes));
+    setBreakMinutes(String(currentSettings.breakMinutes));
+    setOvertimeMax(String(currentSettings.overtimeMaxMinutes));
+    setChimeInterval(String(currentSettings.overtimeChimeIntervalMinutes));
+    setAllowEarlyFinish(currentSettings.allowEarlyFinish);
+  };
+
   const handleOpen = (o: boolean) => {
-    if (disabled) return;
-    setOpen(o);
-    if (o) {
-      setPomodoroMinutes(String(currentSettings.pomodoroMinutes));
-      setBreakMinutes(String(currentSettings.breakMinutes));
-      setOvertimeMax(String(currentSettings.overtimeMaxMinutes));
-      setChimeInterval(String(currentSettings.overtimeChimeIntervalMinutes));
-      setAllowEarlyFinish(currentSettings.allowEarlyFinish);
+    if (o && disabled) return;
+    if (o) resetForm();
+    if (isControlled) {
+      onOpenChange?.(o);
+    } else {
+      setInternalOpen(o);
     }
   };
 
@@ -62,17 +74,21 @@ export function TimerSettings({ currentSettings, onSave, disabled }: TimerSettin
         overtimeChimeIntervalMinutes: chime,
         allowEarlyFinish,
       });
-      setOpen(false);
+      handleOpen(false);
     }
   };
 
   return (
     <Dialog open={open} onOpenChange={handleOpen}>
-      <DialogTrigger asChild>
-        <Button variant="ghost" size="icon" disabled={disabled}>
-          <Settings className="h-5 w-5" />
-        </Button>
-      </DialogTrigger>
+      {children ? (
+        <DialogTrigger asChild>{children}</DialogTrigger>
+      ) : !isControlled ? (
+        <DialogTrigger asChild>
+          <Button variant="ghost" size="icon" disabled={disabled}>
+            <Settings className="h-5 w-5" />
+          </Button>
+        </DialogTrigger>
+      ) : null}
       <DialogContent>
         <DialogHeader>
           <DialogTitle>Timer-Einstellungen</DialogTitle>

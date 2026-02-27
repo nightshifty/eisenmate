@@ -7,13 +7,15 @@ import {
 } from "@/components/ui/dialog";
 
 interface HowToUseProps {
-  children: React.ReactNode;
+  children?: React.ReactNode;
+  open?: boolean;
+  onOpenChange?: (open: boolean) => void;
 }
 
-export function HowToUse({ children }: HowToUseProps) {
+export function HowToUse({ children, open, onOpenChange }: HowToUseProps) {
   return (
-    <Dialog>
-      <DialogTrigger asChild>{children}</DialogTrigger>
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      {children && <DialogTrigger asChild>{children}</DialogTrigger>}
       <DialogContent>
         <DialogHeader>
           <DialogTitle>So benutzt du Eisenmate</DialogTitle>
