@@ -20,6 +20,7 @@ import { Play, Square, SkipForward, Coffee, Check, X, PartyPopper } from "lucide
 import type { Todo } from "@/hooks/useTodos";
 import type { TimerStatus } from "@/hooks/useTimer";
 import { fireConfetti } from "@/lib/confetti";
+import { getTimerState } from "@/lib/storage";
 
 type Phase = "pomodoro" | "break";
 
@@ -55,7 +56,13 @@ export function PomodoroTimer({
   children,
 }: PomodoroTimerProps) {
   const [phase, setPhase] = useState<Phase>("pomodoro");
-  const [overrideMinutes, setOverrideMinutes] = useState<number | null>(null);
+  const [overrideMinutes, setOverrideMinutes] = useState<number | null>(() => {
+    const saved = getTimerState();
+    if (saved && saved.pomodoroMinutes !== pomodoroMinutes) {
+      return saved.pomodoroMinutes;
+    }
+    return null;
+  });
 
   // State for the "task completed?" confirmation dialog
   const [taskCompleteDialogOpen, setTaskCompleteDialogOpen] = useState(false);
