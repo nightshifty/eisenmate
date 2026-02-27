@@ -11,8 +11,10 @@ import { TimerSettings } from "@/components/timer/TimerSettings";
 import { AboutPomodoro } from "@/components/help/AboutPomodoro";
 import { HowToUse } from "@/components/help/HowToUse";
 import { SessionHistory } from "@/components/sessions/SessionHistory";
-import { Settings, History, Sun, Moon, Timer, LayoutGrid, Volume2, VolumeOff, MoreVertical, BookOpen, Info } from "lucide-react";
+import { SyncStatusIndicator } from "@/components/sync/SyncStatusIndicator";
+import { Settings, History, Sun, Moon, Timer, LayoutGrid, Volume2, VolumeOff, MoreVertical, BookOpen, Info, RefreshCw } from "lucide-react";
 import type { Session, UserSettings } from "@/lib/storage";
+import type { ConnectionStatus } from "@/lib/sync-types";
 import type { Page } from "@/App";
 import { cn } from "@/lib/utils";
 import { useState } from "react";
@@ -39,6 +41,9 @@ interface NavbarProps {
   onToggleTheme: () => void;
   silentMode: boolean;
   onToggleSilentMode: () => void;
+  syncStatus: ConnectionStatus;
+  isSyncPaired: boolean;
+  onSyncSettingsOpen: () => void;
 }
 
 export function Navbar({
@@ -56,6 +61,9 @@ export function Navbar({
   onToggleTheme,
   silentMode,
   onToggleSilentMode,
+  syncStatus,
+  isSyncPaired,
+  onSyncSettingsOpen,
 }: NavbarProps) {
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [historyOpen, setHistoryOpen] = useState(false);
@@ -99,12 +107,19 @@ export function Navbar({
           </div>
         </div>
 
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button variant="ghost" size="icon">
-              <MoreVertical className="h-5 w-5" />
-            </Button>
-          </DropdownMenuTrigger>
+        <div className="flex items-center gap-1">
+          <SyncStatusIndicator
+            status={syncStatus}
+            isPaired={isSyncPaired}
+            onClick={onSyncSettingsOpen}
+          />
+
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="ghost" size="icon">
+                <MoreVertical className="h-5 w-5" />
+              </Button>
+            </DropdownMenuTrigger>
           <DropdownMenuContent align="end" className="w-52">
             <DropdownMenuItem disabled={timerRunning} onSelect={() => setSettingsOpen(true)}>
               <Settings className="h-4 w-4" />
@@ -114,6 +129,11 @@ export function Navbar({
             <DropdownMenuItem onSelect={() => setHistoryOpen(true)}>
               <History className="h-4 w-4" />
               Verlauf
+            </DropdownMenuItem>
+
+            <DropdownMenuItem onSelect={onSyncSettingsOpen}>
+              <RefreshCw className="h-4 w-4" />
+              Synchronisation
             </DropdownMenuItem>
 
             <DropdownMenuSeparator />
@@ -141,6 +161,7 @@ export function Navbar({
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
+        </div>
 
         {/* Dialogs rendered outside the dropdown */}
         <TimerSettings

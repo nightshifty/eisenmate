@@ -1,5 +1,6 @@
-import { useState, useMemo, useCallback } from "react";
+import { useState, useMemo, useCallback, useEffect } from "react";
 import { getSessions, saveSessions, getTodos, saveTodos, generateId, type Session } from "@/lib/storage";
+import { SYNC_UPDATE_EVENT } from "@/lib/sync-types";
 
 export type { Session } from "@/lib/storage";
 
@@ -38,6 +39,15 @@ function subtractSessionTimesFromTodos(sessionsToRemove: Session[]): void {
 
 export function useSessions(onTodosChanged?: () => void) {
   const [sessions, setSessions] = useState<Session[]>(() => getSessions());
+
+  // Re-read from storage when sync engine updates data
+  useEffect(() => {
+    const handleSyncUpdate = () => {
+      setSessions(getSessions());
+    };
+    window.addEventListener(SYNC_UPDATE_EVENT, handleSyncUpdate);
+    return () => window.removeEventListener(SYNC_UPDATE_EVENT, handleSyncUpdate);
+  }, []);
 
   const addSession = useCallback((session: Omit<Session, "id">) => {
     const updated = [{ ...session, id: generateId() }, ...getSessions()];

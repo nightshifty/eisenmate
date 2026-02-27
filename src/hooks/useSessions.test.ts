@@ -17,6 +17,7 @@ function createTodo(overrides: Partial<Todo> = {}): Todo {
     createdAt: new Date().toISOString(),
     completedAt: null,
     quadrant: null,
+    updatedAt: Date.now(),
     ...overrides,
   };
   const existing = getTodos();

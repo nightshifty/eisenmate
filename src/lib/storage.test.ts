@@ -48,6 +48,7 @@ describe("todos storage", () => {
         createdAt: "2025-01-01T00:00:00.000Z",
         completedAt: null,
         quadrant: null,
+        updatedAt: 1700000000000,
       },
     ];
     saveTodos(todos);
@@ -87,11 +88,12 @@ describe("settings storage", () => {
       allowEarlyFinish: true,
       silentMode: false,
       sessionTimerEnabled: true,
+      updatedAt: 0,
     });
   });
 
   it("round-trips settings", () => {
-    saveSettings({ pomodoroMinutes: 45, breakMinutes: 10, overtimeMaxMinutes: 60, overtimeChimeIntervalMinutes: 10, allowEarlyFinish: false, silentMode: false, sessionTimerEnabled: true });
+    saveSettings({ pomodoroMinutes: 45, breakMinutes: 10, overtimeMaxMinutes: 60, overtimeChimeIntervalMinutes: 10, allowEarlyFinish: false, silentMode: false, sessionTimerEnabled: true, updatedAt: 1700000000000 });
     expect(getSettings()).toEqual({
       pomodoroMinutes: 45,
       breakMinutes: 10,
@@ -100,6 +102,7 @@ describe("settings storage", () => {
       allowEarlyFinish: false,
       silentMode: false,
       sessionTimerEnabled: true,
+      updatedAt: 1700000000000,
     });
   });
 
@@ -114,6 +117,7 @@ describe("settings storage", () => {
       allowEarlyFinish: true,
       silentMode: false,
       sessionTimerEnabled: true,
+      updatedAt: 0,
     });
   });
 });

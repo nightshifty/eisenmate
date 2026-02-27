@@ -4,11 +4,15 @@ import { EisenhowerPage } from "@/pages/EisenhowerPage";
 import { Navbar } from "@/components/layout/Navbar";
 import { SessionTimerBar } from "@/components/sessions/SessionTimerBar";
 import { SessionSummaryDialog } from "@/components/sessions/SessionSummaryDialog";
+import { PairingDialog } from "@/components/sync/PairingDialog";
+import { SyncSettings } from "@/components/sync/SyncSettings";
+import { ConflictDialog } from "@/components/sync/ConflictDialog";
 import { useTodos } from "@/hooks/useTodos";
 import { useUserSettings } from "@/hooks/useUserSettings";
 import { useSessions } from "@/hooks/useSessions";
 import { useTheme } from "@/hooks/useTheme";
 import { useSessionTimer, type SessionSummary } from "@/hooks/useSessionTimer";
+import { useSync } from "@/hooks/useSync";
 
 export type Page = "pomodoro" | "eisenhower";
 
@@ -23,6 +27,26 @@ export default function App() {
   const sessionTimer = useSessionTimer(settingsHook.sessionTimerEnabled);
   const [summaryDialogOpen, setSummaryDialogOpen] = useState(false);
   const [pendingSummary, setPendingSummary] = useState<SessionSummary | null>(null);
+
+  // ─── Sync ───────────────────────────────────────────────────────────
+  const sync = useSync();
+  const [syncSettingsOpen, setSyncSettingsOpen] = useState(false);
+  const [pairingDialogOpen, setPairingDialogOpen] = useState(false);
+
+  const handleStartPairing = useCallback(() => {
+    setSyncSettingsOpen(false);
+    setPairingDialogOpen(true);
+  }, []);
+
+  const handlePairingComplete = useCallback(
+    (payload: Parameters<typeof sync.completePairing>[0], role: "initiator" | "responder") => {
+      sync.completePairing(payload, role);
+      setPairingDialogOpen(false);
+    },
+    [sync],
+  );
+
+  // ─── Session Timer ──────────────────────────────────────────────────
 
   const handleSessionStop = useCallback(() => {
     const summary = sessionTimer.getSummary();
@@ -67,6 +91,9 @@ export default function App() {
         onToggleTheme={toggleTheme}
         silentMode={settingsHook.silentMode}
         onToggleSilentMode={() => settingsHook.updateSettings({ silentMode: !settingsHook.silentMode })}
+        syncStatus={sync.connectionStatus}
+        isSyncPaired={sync.isPaired}
+        onSyncSettingsOpen={() => setSyncSettingsOpen(true)}
       />
 
       {settingsHook.sessionTimerEnabled && sessionTimer.isRunning && (
@@ -113,6 +140,31 @@ export default function App() {
         summary={pendingSummary}
         onConfirm={handleSummaryConfirm}
         onCancel={handleSummaryCancel}
+      />
+
+      {/* ─── Sync Dialogs ──────────────────────────────────────────── */}
+      <SyncSettings
+        open={syncSettingsOpen}
+        onOpenChange={setSyncSettingsOpen}
+        syncConfig={sync.syncConfig}
+        connectionStatus={sync.connectionStatus}
+        onStartPairing={handleStartPairing}
+        onUnpair={sync.unpair}
+        onSyncNow={sync.syncNow}
+        onToggleSync={sync.toggleSync}
+      />
+
+      <PairingDialog
+        open={pairingDialogOpen}
+        onOpenChange={setPairingDialogOpen}
+        onPairingComplete={handlePairingComplete}
+        localPairingPayload={sync.pairingPayload}
+        onStartAsInitiator={sync.startPairing}
+      />
+
+      <ConflictDialog
+        conflicts={sync.conflicts}
+        onResolve={sync.resolveConflicts}
       />
     </div>
   );
