@@ -5,7 +5,7 @@ import { VitePWA } from "vite-plugin-pwa";
 import path from "path";
 
 export default defineConfig({
-  base: "/EisenMate/",
+  base: "/eisenmate/",
   plugins: [
     react(),
     tailwindcss(),
@@ -21,8 +21,8 @@ export default defineConfig({
         theme_color: "#1A202C",
         background_color: "#1A202C",
         display: "standalone",
-        scope: "/EisenMate/",
-        start_url: "/EisenMate/",
+        scope: "/eisenmate/",
+        start_url: "/eisenmate/",
         icons: [
           {
             src: "pwa-192x192.png",
