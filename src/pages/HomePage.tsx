@@ -54,6 +54,14 @@ export function HomePage({
     setActiveTodo((prev) => (prev?.id === todo.id ? null : todo));
   };
 
+  const handleToggleDone = useCallback((todoId: string, done: boolean) => {
+    toggleDone(todoId, done);
+    // When a task is marked as done and it's the active task, deselect it
+    if (done && activeTodo?.id === todoId) {
+      setActiveTodo(null);
+    }
+  }, [toggleDone, activeTodo]);
+
   const handlePomodoroComplete = useCallback((effectivePomodoroMinutes: number) => {
     if (activeTodo) {
       trackTime(activeTodo.id, effectivePomodoroMinutes);
@@ -104,6 +112,7 @@ export function HomePage({
         onPomodoroComplete={handlePomodoroComplete}
         onEarlyFinish={handleEarlyFinish}
         onOvertimeStop={handleOvertimeStop}
+        onToggleDone={handleToggleDone}
         onStatusChange={handleStatusChange}
       />
 
@@ -114,7 +123,7 @@ export function HomePage({
         onSelect={handleSelectTodo}
         onAdd={addTodo}
         onDelete={deleteTodo}
-        onToggleDone={toggleDone}
+        onToggleDone={handleToggleDone}
       />
     </main>
   );
