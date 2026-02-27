@@ -21,7 +21,7 @@ import type { Todo } from "@/hooks/useTodos";
 import type { TimerStatus } from "@/hooks/useTimer";
 import { fireConfetti } from "@/lib/confetti";
 import { getTimerState } from "@/lib/storage";
-import { useTranslation } from "react-i18next";
+import { useTranslation, Trans } from "react-i18next";
 
 type Phase = "pomodoro" | "break";
 
@@ -353,7 +353,7 @@ export function PomodoroTimer({
                 </AlertDialogMedia>
                 <AlertDialogTitle>{t("timer.taskCompleted")}</AlertDialogTitle>
                 <AlertDialogDescription>
-                  <span dangerouslySetInnerHTML={{ __html: t("timer.taskCompletedDescription", { task: activeTodo.content }) }} />
+                  <Trans i18nKey="timer.taskCompletedDescription" values={{ task: activeTodo.content }} components={{ strong: <strong /> }} />
                 </AlertDialogDescription>
               </>
             ) : (

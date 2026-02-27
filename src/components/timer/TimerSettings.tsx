@@ -29,7 +29,7 @@ import {
   type ExportData,
   type ImportMode,
 } from "@/lib/storage";
-import { useTranslation } from "react-i18next";
+import { useTranslation, Trans } from "react-i18next";
 
 interface TimerSettingsProps {
   currentSettings: {
@@ -283,7 +283,7 @@ export function TimerSettings({ currentSettings, onSave, disabled, children, ope
           <AlertDialogHeader>
             <AlertDialogTitle>{t("settings.importModeTitle")}</AlertDialogTitle>
             <AlertDialogDescription>
-              <span dangerouslySetInnerHTML={{ __html: t("settings.importModeDescription") }} />
+              <Trans i18nKey="settings.importModeDescription" components={{ strong: <strong /> }} />
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>

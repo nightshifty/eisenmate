@@ -15,6 +15,8 @@ playwright-report/
 test-results/
 *.local
 .claude/
+/CLAUDE.md
+/AGENTS.md
 
 # Editor directories and files
 .vscode/*

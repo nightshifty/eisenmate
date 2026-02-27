@@ -107,4 +107,39 @@ describe("useTodos", () => {
     expect(result.current.todos[0].content).toBe("Task");
     expect(result.current.todos[0].quadrant).toBe("urgent-important");
   });
+
+  it("handles rapid successive mutations without data loss", () => {
+    const { result } = renderHook(() => useTodos());
+    act(() => result.current.addTodo("Task A", 10));
+    act(() => result.current.addTodo("Task B", 20));
+    const idA = result.current.todos.find((t) => t.content === "Task A")!.id;
+    const idB = result.current.todos.find((t) => t.content === "Task B")!.id;
+
+    // Rapid mutations on different todos within a single act
+    act(() => {
+      result.current.trackTime(idA, 5);
+      result.current.toggleDone(idB, true);
+    });
+
+    expect(result.current.todos.find((t) => t.id === idA)!.timeSpentMinutes).toBe(5);
+    expect(result.current.todos.find((t) => t.id === idB)!.done).toBe(true);
+    // Verify localStorage is also consistent
+    expect(getTodos().find((t) => t.id === idA)!.timeSpentMinutes).toBe(5);
+    expect(getTodos().find((t) => t.id === idB)!.done).toBe(true);
+  });
+
+  it("handles rapid successive trackTime calls on same todo", () => {
+    const { result } = renderHook(() => useTodos());
+    act(() => result.current.addTodo("Task", 60));
+    const id = result.current.todos[0].id;
+
+    act(() => {
+      result.current.trackTime(id, 10);
+      result.current.trackTime(id, 15);
+      result.current.trackTime(id, 5);
+    });
+
+    expect(result.current.todos[0].timeSpentMinutes).toBe(30);
+    expect(getTodos()[0].timeSpentMinutes).toBe(30);
+  });
 });
