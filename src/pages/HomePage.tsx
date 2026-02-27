@@ -119,8 +119,9 @@ export function HomePage({
       <TodoPanel
         todos={todos}
         loading={todosLoading}
-        activeTodoId={activeTodo?.id ?? null}
+        activeTodo={activeTodo}
         onSelect={handleSelectTodo}
+        onDeselect={() => setActiveTodo(null)}
         onAdd={addTodo}
         onDelete={deleteTodo}
         onToggleDone={handleToggleDone}

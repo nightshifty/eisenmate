@@ -297,15 +297,6 @@ export function PomodoroTimer({
         onMinutesChange={handleMinutesChange}
       />
 
-      {activeTodo && (
-        <p className="text-sm text-muted-foreground">
-          Aktive Aufgabe: <span className="font-medium text-foreground">{activeTodo.content}</span>
-        </p>
-      )}
-      {!activeTodo && (
-        <p className="text-sm text-muted-foreground">Keine Aufgabe ausgewählt</p>
-      )}
-
       <div className="flex gap-3">
         {pomodoro.status === "idle" || pomodoro.status === "paused" ? (
           <Button onClick={pomodoro.start} size="lg" className="gap-2">
