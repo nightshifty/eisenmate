@@ -19,6 +19,7 @@ export function useUserSettings() {
     overtimeChimeIntervalMinutes: settings.overtimeChimeIntervalMinutes,
     allowEarlyFinish: settings.allowEarlyFinish,
     silentMode: settings.silentMode,
+    sessionTimerEnabled: settings.sessionTimerEnabled,
     updateSettings,
   };
 }

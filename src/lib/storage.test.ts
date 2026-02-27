@@ -86,11 +86,12 @@ describe("settings storage", () => {
       overtimeChimeIntervalMinutes: 5,
       allowEarlyFinish: true,
       silentMode: false,
+      sessionTimerEnabled: true,
     });
   });
 
   it("round-trips settings", () => {
-    saveSettings({ pomodoroMinutes: 45, breakMinutes: 10, overtimeMaxMinutes: 60, overtimeChimeIntervalMinutes: 10, allowEarlyFinish: false, silentMode: false });
+    saveSettings({ pomodoroMinutes: 45, breakMinutes: 10, overtimeMaxMinutes: 60, overtimeChimeIntervalMinutes: 10, allowEarlyFinish: false, silentMode: false, sessionTimerEnabled: true });
     expect(getSettings()).toEqual({
       pomodoroMinutes: 45,
       breakMinutes: 10,
@@ -98,6 +99,7 @@ describe("settings storage", () => {
       overtimeChimeIntervalMinutes: 10,
       allowEarlyFinish: false,
       silentMode: false,
+      sessionTimerEnabled: true,
     });
   });
 
@@ -111,6 +113,7 @@ describe("settings storage", () => {
       overtimeChimeIntervalMinutes: 5,
       allowEarlyFinish: true,
       silentMode: false,
+      sessionTimerEnabled: true,
     });
   });
 });

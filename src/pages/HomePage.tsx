@@ -29,6 +29,9 @@ interface HomePageProps {
   silentMode?: boolean;
   addSession: (session: { todoId: string | null; todoContent: string; durationMinutes: number; completedAt: string }) => void;
   onTimerRunningChange: (running: boolean) => void;
+  sessionTimerEnabled: boolean;
+  onSessionTimerStart: () => void;
+  onSessionTimerRecordPomodoro: (durationMinutes: number, todoName: string | null) => void;
 }
 
 export function HomePage({
@@ -46,6 +49,9 @@ export function HomePage({
   silentMode,
   addSession,
   onTimerRunningChange,
+  sessionTimerEnabled,
+  onSessionTimerStart,
+  onSessionTimerRecordPomodoro,
 }: HomePageProps) {
   const [activeTodo, setActiveTodo] = useState<Todo | null>(getRestoredTodo);
   const [timerStatus, setTimerStatus] = useState<CombinedTimerStatus>("idle");
@@ -79,25 +85,42 @@ export function HomePage({
       durationMinutes: elapsedMinutes,
       completedAt: new Date().toISOString(),
     });
-  }, [activeTodo, trackTime, addSession]);
+
+    // Record in session timer
+    if (sessionTimerEnabled && elapsedMinutes > 0) {
+      onSessionTimerRecordPomodoro(elapsedMinutes, activeTodo?.content ?? null);
+    }
+  }, [activeTodo, trackTime, addSession, sessionTimerEnabled, onSessionTimerRecordPomodoro]);
 
   const handleOvertimeStop = useCallback((overtimeMinutes: number, effectivePomodoroMinutes: number) => {
     if (activeTodo && overtimeMinutes > 0) {
       trackTime(activeTodo.id, overtimeMinutes);
     }
 
+    const totalMinutes = effectivePomodoroMinutes + overtimeMinutes;
     addSession({
       todoId: activeTodo?.id ?? null,
       todoContent: activeTodo?.content ?? "Kein Todo",
-      durationMinutes: effectivePomodoroMinutes + overtimeMinutes,
+      durationMinutes: totalMinutes,
       completedAt: new Date().toISOString(),
     });
-  }, [activeTodo, trackTime, addSession]);
+
+    // Record in session timer
+    if (sessionTimerEnabled) {
+      onSessionTimerRecordPomodoro(totalMinutes, activeTodo?.content ?? null);
+    }
+  }, [activeTodo, trackTime, addSession, sessionTimerEnabled, onSessionTimerRecordPomodoro]);
 
   const handleStatusChange = useCallback((status: CombinedTimerStatus) => {
     setTimerStatus(status);
-    onTimerRunningChange(status !== "idle" && status !== "completed");
-  }, [onTimerRunningChange]);
+    const isActive = status !== "idle" && status !== "completed";
+    onTimerRunningChange(isActive);
+
+    // Auto-start session timer on first pomodoro start
+    if (sessionTimerEnabled && (status === "running" || status === "paused")) {
+      onSessionTimerStart();
+    }
+  }, [onTimerRunningChange, sessionTimerEnabled, onSessionTimerStart]);
 
   const isTimerActive = timerStatus !== "idle" && timerStatus !== "completed";
   const isBreak = timerStatus === "break";

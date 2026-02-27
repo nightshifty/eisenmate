@@ -19,6 +19,7 @@ interface TimerSettingsProps {
     overtimeMaxMinutes: number;
     overtimeChimeIntervalMinutes: number;
     allowEarlyFinish: boolean;
+    sessionTimerEnabled: boolean;
   };
   onSave: (patch: Partial<UserSettings>) => void;
   disabled?: boolean;
@@ -37,6 +38,7 @@ export function TimerSettings({ currentSettings, onSave, disabled, children, ope
   const [overtimeMax, setOvertimeMax] = useState(String(currentSettings.overtimeMaxMinutes));
   const [chimeInterval, setChimeInterval] = useState(String(currentSettings.overtimeChimeIntervalMinutes));
   const [allowEarlyFinish, setAllowEarlyFinish] = useState(currentSettings.allowEarlyFinish);
+  const [sessionTimerEnabled, setSessionTimerEnabled] = useState(currentSettings.sessionTimerEnabled);
 
   const resetForm = () => {
     setPomodoroMinutes(String(currentSettings.pomodoroMinutes));
@@ -44,6 +46,7 @@ export function TimerSettings({ currentSettings, onSave, disabled, children, ope
     setOvertimeMax(String(currentSettings.overtimeMaxMinutes));
     setChimeInterval(String(currentSettings.overtimeChimeIntervalMinutes));
     setAllowEarlyFinish(currentSettings.allowEarlyFinish);
+    setSessionTimerEnabled(currentSettings.sessionTimerEnabled);
   };
 
   const handleOpen = (o: boolean) => {
@@ -73,6 +76,7 @@ export function TimerSettings({ currentSettings, onSave, disabled, children, ope
         overtimeMaxMinutes: otMax,
         overtimeChimeIntervalMinutes: chime,
         allowEarlyFinish,
+        sessionTimerEnabled,
       });
       handleOpen(false);
     }
@@ -151,6 +155,16 @@ export function TimerSettings({ currentSettings, onSave, disabled, children, ope
               className="h-4 w-4 rounded border-input accent-primary"
             />
             <Label htmlFor="allow-early-finish">Frühzeitiges Abschließen erlauben</Label>
+          </div>
+          <div className="flex items-center gap-2">
+            <input
+              id="session-timer-enabled"
+              type="checkbox"
+              checked={sessionTimerEnabled}
+              onChange={(e) => setSessionTimerEnabled(e.target.checked)}
+              className="h-4 w-4 rounded border-input accent-primary"
+            />
+            <Label htmlFor="session-timer-enabled">Session-Timer anzeigen</Label>
           </div>
           <p className="text-sm text-muted-foreground">
             Wird lokal in deinem Browser gespeichert.

@@ -32,6 +32,9 @@ function renderHomePage(overrides: { pomodoroMinutes?: number; overtimeMaxMinute
     allowEarlyFinish: true,
     addSession,
     onTimerRunningChange: vi.fn(),
+    sessionTimerEnabled: false,
+    onSessionTimerStart: vi.fn(),
+    onSessionTimerRecordPomodoro: vi.fn(),
   };
   const result = render(<HomePage {...props} />);
   return { ...result, addSession, trackTime };

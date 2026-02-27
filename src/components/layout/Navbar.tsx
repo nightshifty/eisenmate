@@ -26,6 +26,7 @@ interface NavbarProps {
     overtimeMaxMinutes: number;
     overtimeChimeIntervalMinutes: number;
     allowEarlyFinish: boolean;
+    sessionTimerEnabled: boolean;
   };
   onSaveSettings: (patch: Partial<UserSettings>) => void;
   timerRunning: boolean;

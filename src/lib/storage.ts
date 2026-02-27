@@ -30,6 +30,16 @@ export interface UserSettings {
   overtimeChimeIntervalMinutes: number;
   allowEarlyFinish: boolean;
   silentMode: boolean;
+  sessionTimerEnabled: boolean;
+}
+
+export interface SessionTimerState {
+  startTime: number; // Date.now() when session started
+  pomodoroCount: number;
+  focusMinutes: number; // total productive minutes
+  longestPomodoroMinutes: number;
+  todoNames: string[]; // unique task names worked on
+  sessionSessions: string[]; // IDs of sessions created during this session timer
 }
 
 export interface TimerState {
@@ -46,6 +56,7 @@ const KEYS = {
   settings: "eisenmate_settings",
   sessions: "eisenmate_sessions",
   timer: "eisenmate_timer",
+  sessionTimer: "eisenmate_session_timer",
 } as const;
 
 function read<T>(key: string, fallback: T): T {
@@ -85,6 +96,7 @@ const DEFAULT_SETTINGS: UserSettings = {
   overtimeChimeIntervalMinutes: 5,
   allowEarlyFinish: true,
   silentMode: false,
+  sessionTimerEnabled: true,
 };
 
 export function getSettings(): UserSettings {
@@ -113,4 +125,16 @@ export function saveTimerState(state: TimerState): void {
 
 export function clearTimerState(): void {
   localStorage.removeItem(KEYS.timer);
+}
+
+export function getSessionTimerState(): SessionTimerState | null {
+  return read<SessionTimerState | null>(KEYS.sessionTimer, null);
+}
+
+export function saveSessionTimerState(state: SessionTimerState): void {
+  write(KEYS.sessionTimer, state);
+}
+
+export function clearSessionTimerState(): void {
+  localStorage.removeItem(KEYS.sessionTimer);
 }

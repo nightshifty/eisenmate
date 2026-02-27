@@ -1,11 +1,14 @@
-import { useState } from "react";
+import { useState, useCallback } from "react";
 import { HomePage } from "@/pages/HomePage";
 import { EisenhowerPage } from "@/pages/EisenhowerPage";
 import { Navbar } from "@/components/layout/Navbar";
+import { SessionTimerBar } from "@/components/sessions/SessionTimerBar";
+import { SessionSummaryDialog } from "@/components/sessions/SessionSummaryDialog";
 import { useTodos } from "@/hooks/useTodos";
 import { useUserSettings } from "@/hooks/useUserSettings";
 import { useSessions } from "@/hooks/useSessions";
 import { useTheme } from "@/hooks/useTheme";
+import { useSessionTimer, type SessionSummary } from "@/hooks/useSessionTimer";
 
 export type Page = "pomodoro" | "eisenhower";
 
@@ -16,6 +19,29 @@ export default function App() {
   const sessionsHook = useSessions(todosHook.refreshTodos);
   const { theme, toggleTheme } = useTheme();
   const [timerRunning, setTimerRunning] = useState(false);
+
+  const sessionTimer = useSessionTimer(settingsHook.sessionTimerEnabled);
+  const [summaryDialogOpen, setSummaryDialogOpen] = useState(false);
+  const [pendingSummary, setPendingSummary] = useState<SessionSummary | null>(null);
+
+  const handleSessionStop = useCallback(() => {
+    const summary = sessionTimer.getSummary();
+    if (summary) {
+      setPendingSummary(summary);
+      setSummaryDialogOpen(true);
+    }
+  }, [sessionTimer]);
+
+  const handleSummaryConfirm = useCallback(() => {
+    sessionTimer.stop();
+    setSummaryDialogOpen(false);
+    setPendingSummary(null);
+  }, [sessionTimer]);
+
+  const handleSummaryCancel = useCallback(() => {
+    setSummaryDialogOpen(false);
+    setPendingSummary(null);
+  }, []);
 
   return (
     <div className="min-h-screen flex flex-col">
@@ -28,6 +54,7 @@ export default function App() {
           overtimeMaxMinutes: settingsHook.overtimeMaxMinutes,
           overtimeChimeIntervalMinutes: settingsHook.overtimeChimeIntervalMinutes,
           allowEarlyFinish: settingsHook.allowEarlyFinish,
+          sessionTimerEnabled: settingsHook.sessionTimerEnabled,
         }}
         onSaveSettings={settingsHook.updateSettings}
         timerRunning={timerRunning}
@@ -41,6 +68,14 @@ export default function App() {
         silentMode={settingsHook.silentMode}
         onToggleSilentMode={() => settingsHook.updateSettings({ silentMode: !settingsHook.silentMode })}
       />
+
+      {settingsHook.sessionTimerEnabled && sessionTimer.isRunning && (
+        <SessionTimerBar
+          display={sessionTimer.display}
+          pomodoroCount={sessionTimer.pomodoroCount}
+          onStop={handleSessionStop}
+        />
+      )}
 
       {page === "pomodoro" ? (
         <HomePage
@@ -58,6 +93,9 @@ export default function App() {
           silentMode={settingsHook.silentMode}
           addSession={sessionsHook.addSession}
           onTimerRunningChange={setTimerRunning}
+          sessionTimerEnabled={settingsHook.sessionTimerEnabled}
+          onSessionTimerStart={sessionTimer.start}
+          onSessionTimerRecordPomodoro={sessionTimer.recordPomodoro}
         />
       ) : (
         <EisenhowerPage
@@ -68,6 +106,14 @@ export default function App() {
           updateTodo={todosHook.updateTodo}
         />
       )}
+
+      <SessionSummaryDialog
+        open={summaryDialogOpen}
+        onOpenChange={setSummaryDialogOpen}
+        summary={pendingSummary}
+        onConfirm={handleSummaryConfirm}
+        onCancel={handleSummaryCancel}
+      />
     </div>
   );
 }
