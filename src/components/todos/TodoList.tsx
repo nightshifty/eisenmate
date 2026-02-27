@@ -1,20 +1,8 @@
 import { useMemo } from "react";
 import { TodoItem } from "./TodoItem";
 import type { Todo } from "@/hooks/useTodos";
-import type { EisenhowerQuadrant } from "@/lib/storage";
+import { getQuadrantPriority } from "@/lib/quadrant";
 import { useTranslation } from "react-i18next";
-
-const QUADRANT_PRIORITY: Record<EisenhowerQuadrant, number> = {
-  "urgent-important": 0,
-  "not-urgent-important": 1,
-  "urgent-not-important": 2,
-  "not-urgent-not-important": 3,
-};
-
-function getQuadrantPriority(quadrant: EisenhowerQuadrant | null): number {
-  if (quadrant === null) return 3;
-  return QUADRANT_PRIORITY[quadrant];
-}
 
 interface TodoListProps {
   todos: Todo[];

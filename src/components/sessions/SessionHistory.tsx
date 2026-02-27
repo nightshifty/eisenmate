@@ -20,6 +20,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Timer, Trash2 } from "lucide-react";
 import type { Session } from "@/lib/storage";
+import { groupByDay } from "@/lib/sessions";
 import { useTranslation } from "react-i18next";
 import { DATE_LOCALES, type SupportedLanguage } from "@/i18n";
 
@@ -32,49 +33,6 @@ interface SessionHistoryProps {
   onClearSessions: () => void;
   open?: boolean;
   onOpenChange?: (open: boolean) => void;
-}
-
-interface GroupedSessions {
-  label: string;
-  sessions: Session[];
-}
-
-function groupByDay(sessions: Session[], todayLabel: string, yesterdayLabel: string, dateLocale: string): GroupedSessions[] {
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
-  const yesterday = new Date(today);
-  yesterday.setDate(yesterday.getDate() - 1);
-
-  const groups: Map<string, { label: string; sessions: Session[] }> = new Map();
-
-  for (const session of sessions) {
-    const date = new Date(session.completedAt);
-    date.setHours(0, 0, 0, 0);
-
-    let label: string;
-    let key: string;
-    if (date.getTime() === today.getTime()) {
-      label = todayLabel;
-      key = "today";
-    } else if (date.getTime() === yesterday.getTime()) {
-      label = yesterdayLabel;
-      key = "yesterday";
-    } else {
-      label = date.toLocaleDateString(dateLocale, {
-        day: "2-digit",
-        month: "2-digit",
-        year: "numeric",
-      });
-      key = label;
-    }
-
-    if (!groups.has(key)) {
-      groups.set(key, { label, sessions: [] });
-    }
-    groups.get(key)!.sessions.push(session);
-  }
-
-  return Array.from(groups.values());
 }
 
 export function SessionHistory({

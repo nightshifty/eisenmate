@@ -11,6 +11,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Clock, Timer, TrendingUp, Trophy, ListChecks } from "lucide-react";
 import type { SessionSummary } from "@/hooks/useSessionTimer";
+import { formatDuration } from "@/lib/format";
 import { useTranslation } from "react-i18next";
 
 interface SessionSummaryDialogProps {
@@ -19,15 +20,6 @@ interface SessionSummaryDialogProps {
   summary: SessionSummary | null;
   onConfirm: () => void;
   onCancel: () => void;
-}
-
-function formatDuration(totalMinutes: number): string {
-  if (totalMinutes < 1) return "< 1 min";
-  const hours = Math.floor(totalMinutes / 60);
-  const minutes = totalMinutes % 60;
-  if (hours === 0) return `${minutes} min`;
-  if (minutes === 0) return `${hours} h`;
-  return `${hours} h ${minutes} min`;
 }
 
 export function SessionSummaryDialog({
