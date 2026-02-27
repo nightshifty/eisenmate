@@ -138,3 +138,126 @@ export function saveSessionTimerState(state: SessionTimerState): void {
 export function clearSessionTimerState(): void {
   localStorage.removeItem(KEYS.sessionTimer);
 }
+
+// ---------------------------------------------------------------------------
+// Export / Import
+// ---------------------------------------------------------------------------
+
+const THEME_KEY = "eisenmate_theme";
+const EXPORT_APP_ID = "eisenmate";
+const EXPORT_VERSION = 1;
+
+export interface ExportData {
+  version: number;
+  app: string;
+  exportedAt: string;
+  data: {
+    todos: Todo[];
+    sessions: Session[];
+    settings: UserSettings;
+    theme: "light" | "dark";
+  };
+}
+
+export type ImportMode = "replace" | "merge";
+
+export function exportAllData(): ExportData {
+  const theme = (localStorage.getItem(THEME_KEY) as "light" | "dark") ?? "light";
+  return {
+    version: EXPORT_VERSION,
+    app: EXPORT_APP_ID,
+    exportedAt: new Date().toISOString(),
+    data: {
+      todos: getTodos(),
+      sessions: getSessions(),
+      settings: getSettings(),
+      theme,
+    },
+  };
+}
+
+export function downloadJson(data: ExportData): void {
+  const json = JSON.stringify(data, null, 2);
+  const blob = new Blob([json], { type: "application/json" });
+  const url = URL.createObjectURL(blob);
+  const date = new Date().toISOString().slice(0, 10);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = `eisenmate-backup-${date}.json`;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
+
+export function validateExportData(raw: unknown): raw is ExportData {
+  if (typeof raw !== "object" || raw === null) return false;
+  const obj = raw as Record<string, unknown>;
+  if (obj.app !== EXPORT_APP_ID) return false;
+  if (typeof obj.version !== "number" || obj.version < 1) return false;
+  if (typeof obj.data !== "object" || obj.data === null) return false;
+  const data = obj.data as Record<string, unknown>;
+  if (!Array.isArray(data.todos)) return false;
+  if (!Array.isArray(data.sessions)) return false;
+  return !(typeof data.settings !== "object" || data.settings === null);
+
+}
+
+export function importAllData(
+  exported: ExportData,
+  mode: ImportMode,
+): void {
+  const { todos, sessions, settings, theme } = exported.data;
+
+  if (mode === "replace") {
+    saveTodos(todos);
+    saveSessions(sessions);
+    saveSettings(settings);
+    if (theme) localStorage.setItem(THEME_KEY, theme);
+  } else {
+    // Merge mode
+    const existingTodos = getTodos();
+    const existingTodoIds = new Set(existingTodos.map((t) => t.id));
+    const mergedTodos = [...existingTodos];
+    for (const todo of todos) {
+      if (existingTodoIds.has(todo.id)) {
+        // Overwrite existing with imported version
+        const idx = mergedTodos.findIndex((t) => t.id === todo.id);
+        if (idx !== -1) mergedTodos[idx] = todo;
+      } else {
+        mergedTodos.push(todo);
+      }
+    }
+    saveTodos(mergedTodos);
+
+    const existingSessions = getSessions();
+    const existingSessionIds = new Set(existingSessions.map((s) => s.id));
+    const mergedSessions = [...existingSessions];
+    for (const session of sessions) {
+      if (existingSessionIds.has(session.id)) {
+        const idx = mergedSessions.findIndex((s) => s.id === session.id);
+        if (idx !== -1) mergedSessions[idx] = session;
+      } else {
+        mergedSessions.push(session);
+      }
+    }
+    saveSessions(mergedSessions);
+
+    // Settings and theme are always replaced in merge mode
+    saveSettings(settings);
+    if (theme) localStorage.setItem(THEME_KEY, theme);
+  }
+}
+
+export function parseExportFile(jsonString: string): ExportData {
+  let parsed: unknown;
+  try {
+    parsed = JSON.parse(jsonString);
+  } catch {
+    throw new Error("Die Datei enthält kein gültiges JSON.");
+  }
+  if (!validateExportData(parsed)) {
+    throw new Error("Die Datei ist keine gültige Eisenmate-Backup-Datei.");
+  }
+  return parsed;
+}

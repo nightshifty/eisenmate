@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
 import {
   Dialog,
   DialogContent,
@@ -6,11 +6,29 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
+import {
+  AlertDialog,
+  AlertDialogContent,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogCancel,
+  AlertDialogAction,
+} from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Settings } from "lucide-react";
+import { Settings, Download, Upload } from "lucide-react";
 import type { UserSettings } from "@/lib/storage";
+import {
+  exportAllData,
+  downloadJson,
+  parseExportFile,
+  importAllData,
+  type ExportData,
+  type ImportMode,
+} from "@/lib/storage";
 
 interface TimerSettingsProps {
   currentSettings: {
@@ -39,6 +57,13 @@ export function TimerSettings({ currentSettings, onSave, disabled, children, ope
   const [chimeInterval, setChimeInterval] = useState(String(currentSettings.overtimeChimeIntervalMinutes));
   const [allowEarlyFinish, setAllowEarlyFinish] = useState(currentSettings.allowEarlyFinish);
   const [sessionTimerEnabled, setSessionTimerEnabled] = useState(currentSettings.sessionTimerEnabled);
+
+  // Import state
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [importData, setImportData] = useState<ExportData | null>(null);
+  const [importModeOpen, setImportModeOpen] = useState(false);
+  const [importError, setImportError] = useState<string | null>(null);
+  const [importSuccess, setImportSuccess] = useState(false);
 
   const resetForm = () => {
     setPomodoroMinutes(String(currentSettings.pomodoroMinutes));
@@ -79,6 +104,46 @@ export function TimerSettings({ currentSettings, onSave, disabled, children, ope
         sessionTimerEnabled,
       });
       handleOpen(false);
+    }
+  };
+
+  const handleExport = () => {
+    const data = exportAllData();
+    downloadJson(data);
+  };
+
+  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setImportError(null);
+    setImportSuccess(false);
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = () => {
+      try {
+        const parsed = parseExportFile(reader.result as string);
+        setImportData(parsed);
+        setImportModeOpen(true);
+      } catch (err) {
+        setImportError(err instanceof Error ? err.message : "Unbekannter Fehler beim Lesen der Datei.");
+      }
+    };
+    reader.readAsText(file);
+    // Reset input so the same file can be selected again
+    e.target.value = "";
+  };
+
+  const handleImport = (mode: ImportMode) => {
+    if (!importData) return;
+    try {
+      importAllData(importData, mode);
+      setImportData(null);
+      setImportModeOpen(false);
+      setImportSuccess(true);
+      // Reload after a short delay so the user sees the success message
+      setTimeout(() => window.location.reload(), 1200);
+    } catch {
+      setImportError("Fehler beim Importieren der Daten.");
+      setImportModeOpen(false);
     }
   };
 
@@ -170,10 +235,68 @@ export function TimerSettings({ currentSettings, onSave, disabled, children, ope
             Wird lokal in deinem Browser gespeichert.
           </p>
           <Button onClick={handleSave} className="w-full">
-            Speichern
+            Einstellungen speichern
           </Button>
+
+          <hr className="border-border" />
+
+          <div className="space-y-3">
+            <Label className="text-base font-medium">Daten verwalten</Label>
+            <div className="flex gap-2">
+              <Button variant="outline" className="flex-1 gap-2" onClick={handleExport}>
+                <Download className="h-4 w-4" />
+                Exportieren
+              </Button>
+              <Button
+                variant="outline"
+                className="flex-1 gap-2"
+                onClick={() => fileInputRef.current?.click()}
+              >
+                <Upload className="h-4 w-4" />
+                Importieren
+              </Button>
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept=".json"
+                className="hidden"
+                onChange={handleFileSelect}
+              />
+            </div>
+            {importError && (
+              <p className="text-sm text-destructive">{importError}</p>
+            )}
+            {importSuccess && (
+              <p className="text-sm text-green-600 dark:text-green-400">
+                Daten erfolgreich importiert. Seite wird neu geladen...
+              </p>
+            )}
+          </div>
         </div>
       </DialogContent>
+
+      <AlertDialog open={importModeOpen} onOpenChange={(o) => { if (!o) { setImportModeOpen(false); setImportData(null); } }}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Wie sollen die Daten importiert werden?</AlertDialogTitle>
+            <AlertDialogDescription>
+              <span className="font-medium">Ersetzen</span> ersetzt alle bestehenden Daten durch den Import.{" "}
+              <span className="font-medium">Zusammenführen</span> fügt neue Einträge hinzu und aktualisiert bestehende.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={() => { setImportModeOpen(false); setImportData(null); }}>
+              Abbrechen
+            </AlertDialogCancel>
+            <AlertDialogAction variant="outline" onClick={() => handleImport("merge")}>
+              Zusammenführen
+            </AlertDialogAction>
+            <AlertDialogAction onClick={() => handleImport("replace")}>
+              Ersetzen
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </Dialog>
   );
 }
