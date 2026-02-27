@@ -1,3 +1,4 @@
+import type { ReactNode } from "react";
 import { useEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import {
@@ -35,6 +36,7 @@ interface PomodoroTimerProps {
   onOvertimeStop: (overtimeMinutes: number, effectivePomodoroMinutes: number) => void;
   onToggleDone: (todoId: string, done: boolean) => void;
   onStatusChange?: (status: TimerStatus | "break") => void;
+  children: (timerDisplay: ReactNode, controls: ReactNode) => ReactNode;
 }
 
 export function PomodoroTimer({
@@ -50,6 +52,7 @@ export function PomodoroTimer({
   onOvertimeStop,
   onToggleDone,
   onStatusChange,
+  children,
 }: PomodoroTimerProps) {
   const [phase, setPhase] = useState<Phase>("pomodoro");
   const [overrideMinutes, setOverrideMinutes] = useState<number | null>(null);
@@ -177,8 +180,8 @@ export function PomodoroTimer({
     }
     const wasOvertime = pomodoro.status === "overtime";
 
-    // If there's an active task and we were in overtime, ask about task completion
-    if (activeTodo && wasOvertime) {
+    if (wasOvertime) {
+      // Always show dialog — it handles task completion + abort options
       pendingFinishRef.current = () => {
         pomodoro.reset();
         setOverrideMinutes(null);
@@ -190,10 +193,6 @@ export function PomodoroTimer({
 
     pomodoro.reset();
     setOverrideMinutes(null);
-    // After manual stop in overtime, transition to break
-    if (wasOvertime) {
-      setPhase("break");
-    }
   };
 
   const handleEarlyFinish = () => {
@@ -205,16 +204,12 @@ export function PomodoroTimer({
       onEarlyFinishRef.current(elapsedMinutes);
     }
 
-    // If there's an active task, ask about task completion before finishing
-    if (activeTodo) {
-      pendingFinishRef.current = finishPomodoro;
-      setTaskCompleteDialogOpen(true);
-      return;
-    }
-
-    finishPomodoro();
+    // Always show the dialog — it handles both "task done?" and "abort?" options
+    pendingFinishRef.current = finishPomodoro;
+    setTaskCompleteDialogOpen(true);
   };
 
+  // Dialog: mark task as done + finish pomodoro
   const handleTaskCompleteConfirm = () => {
     if (activeTodo) {
       onToggleDone(activeTodo.id, true);
@@ -225,12 +220,22 @@ export function PomodoroTimer({
     pendingFinishRef.current = null;
   };
 
-  const handleTaskCompleteCancel = () => {
+  // Dialog: finish pomodoro without marking task as done
+  const handleTaskCompleteDecline = () => {
     setTaskCompleteDialogOpen(false);
     pendingFinishRef.current?.();
     pendingFinishRef.current = null;
   };
 
+  // Dialog: abort pomodoro entirely (no session booked)
+  const handleAbort = () => {
+    setTaskCompleteDialogOpen(false);
+    pendingFinishRef.current = null;
+    pomodoro.reset();
+    setOverrideMinutes(null);
+  };
+
+  // Direct cancel (used in first minute when no dialog is shown)
   const handleCancel = () => {
     pomodoro.reset();
     setOverrideMinutes(null);
@@ -245,39 +250,43 @@ export function PomodoroTimer({
     setOverrideMinutes(minutes);
   };
 
-  // Determine what to show based on phase
+  // --- Build timerDisplay and controls based on phase ---
+
   if (phase === "break") {
     const breakVariant: TimerVariant = breakTimer.isOvertime ? "overtime" : "break";
 
-    return (
-      <div className="flex flex-col items-center gap-4 sm:gap-6">
+    const timerDisplay = (
+      <div className="flex flex-col items-center gap-2">
         <TimerCircle
           progress={breakTimer.progress}
           minutes={breakTimer.minutes}
           seconds={breakTimer.seconds}
           variant={breakVariant}
         />
-
         <div className="flex items-center gap-2 text-sm text-muted-foreground">
           <Coffee className="h-4 w-4 text-break" />
           <span>Pause</span>
         </div>
-
-        <div className="flex gap-3">
-          {breakTimer.isOvertime ? (
-            <Button onClick={handleSkipBreak} size="lg" variant="destructive" className="gap-2">
-              <Square className="h-5 w-5" />
-              Stoppen
-            </Button>
-          ) : (
-            <Button onClick={handleSkipBreak} size="lg" variant="outline" className="gap-2">
-              <SkipForward className="h-5 w-5" />
-              Überspringen
-            </Button>
-          )}
-        </div>
       </div>
     );
+
+    const controls = (
+      <div className="flex gap-3 justify-center">
+        {breakTimer.isOvertime ? (
+          <Button onClick={handleSkipBreak} size="lg" variant="destructive" className="gap-2">
+            <Square className="h-5 w-5" />
+            Stoppen
+          </Button>
+        ) : (
+          <Button onClick={handleSkipBreak} size="lg" variant="outline" className="gap-2">
+            <SkipForward className="h-5 w-5" />
+            Überspringen
+          </Button>
+        )}
+      </div>
+    );
+
+    return <>{children(timerDisplay, controls)}</>;
   }
 
   // Pomodoro phase
@@ -286,25 +295,32 @@ export function PomodoroTimer({
   const elapsedMs = effectiveMinutes * 60 * 1000 - pomodoro.remainingMs;
   const canEarlyFinish = elapsedMs >= 60000;
 
-  return (
-    <div className="flex flex-col items-center gap-4 sm:gap-6">
-      <TimerCircle
-        progress={pomodoro.progress}
-        minutes={pomodoro.minutes}
-        seconds={pomodoro.seconds}
-        variant={pomodoroVariant}
-        editable={isIdle}
-        onMinutesChange={handleMinutesChange}
-      />
+  const timerDisplay = (
+    <TimerCircle
+      progress={pomodoro.progress}
+      minutes={pomodoro.minutes}
+      seconds={pomodoro.seconds}
+      variant={pomodoroVariant}
+      editable={isIdle}
+      onMinutesChange={handleMinutesChange}
+    />
+  );
 
-      <div className="flex gap-3">
+  const controls = (
+    <>
+      <div className="flex gap-3 justify-center">
         {pomodoro.status === "idle" || pomodoro.status === "paused" ? (
           <Button onClick={pomodoro.start} size="lg" className="gap-2">
             <Play className="h-5 w-5" />
             {pomodoro.status === "paused" ? "Fortsetzen" : "Start"}
           </Button>
+        ) : pomodoro.status === "running" && !canEarlyFinish ? (
+          <Button onClick={handleCancel} size="lg" variant="outline" className="gap-2">
+            <X className="h-5 w-5" />
+            Abbrechen
+          </Button>
         ) : pomodoro.status === "running" && allowEarlyFinish ? (
-          <Button onClick={handleEarlyFinish} size="lg" variant="default" className="gap-2" disabled={!canEarlyFinish}>
+          <Button onClick={handleEarlyFinish} size="lg" variant="default" className="gap-2">
             <Check className="h-5 w-5" />
             Abschließen
           </Button>
@@ -314,38 +330,49 @@ export function PomodoroTimer({
             Abschließen
           </Button>
         ) : null}
-
-        {(pomodoro.status === "running" || pomodoro.status === "paused" || pomodoro.status === "completed") && (
-          <Button onClick={handleCancel} size="lg" variant="outline" className="gap-2">
-            <X className="h-5 w-5" />
-            Abbrechen
-          </Button>
-        )}
       </div>
 
       <AlertDialog open={taskCompleteDialogOpen} onOpenChange={(open) => {
-        if (!open) handleTaskCompleteCancel();
+        if (!open) handleTaskCompleteDecline();
       }}>
         <AlertDialogContent size="sm">
           <AlertDialogHeader>
-            <AlertDialogMedia className="bg-primary/10">
-              <PartyPopper className="h-8 w-8 text-primary" />
-            </AlertDialogMedia>
-            <AlertDialogTitle>Aufgabe abgeschlossen?</AlertDialogTitle>
-            <AlertDialogDescription>
-              Hast du <span className="font-medium text-foreground">„{activeTodo?.content}"</span> vollständig erledigt?
-            </AlertDialogDescription>
+            {activeTodo ? (
+              <>
+                <AlertDialogMedia className="bg-primary/10">
+                  <PartyPopper className="h-8 w-8 text-primary" />
+                </AlertDialogMedia>
+                <AlertDialogTitle>Aufgabe abgeschlossen?</AlertDialogTitle>
+                <AlertDialogDescription>
+                  Hast du <span className="font-medium text-foreground">„{activeTodo.content}"</span> vollständig erledigt?
+                </AlertDialogDescription>
+              </>
+            ) : (
+              <>
+                <AlertDialogTitle>Pomodoro abschließen?</AlertDialogTitle>
+                <AlertDialogDescription>
+                  Möchtest du diesen Pomodoro als abgeschlossen werten?
+                </AlertDialogDescription>
+              </>
+            )}
           </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel onClick={handleTaskCompleteCancel}>
-              Nein, weiter offen
+          <AlertDialogFooter className="flex! flex-col! gap-2">
+            {activeTodo && (
+              <AlertDialogAction onClick={handleTaskCompleteConfirm}>
+                Ja, erledigt
+              </AlertDialogAction>
+            )}
+            <AlertDialogCancel onClick={handleTaskCompleteDecline} variant={activeTodo ? "outline" : "default"}>
+              {activeTodo ? "Nein, weiter offen" : "Pomodoro abschließen"}
             </AlertDialogCancel>
-            <AlertDialogAction onClick={handleTaskCompleteConfirm}>
-              Ja, erledigt
-            </AlertDialogAction>
+            <Button onClick={handleAbort} variant="outline">
+              Pomodoro erfolglos abbrechen
+            </Button>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
-    </div>
+    </>
   );
+
+  return <>{children(timerDisplay, controls)}</>;
 }

@@ -7,7 +7,8 @@ import {
 } from "@/components/ui/sheet";
 import { TodoList } from "./TodoList";
 import { AddTodoForm } from "./AddTodoForm";
-import { ClipboardList, ChevronDown, Clock, Check, X } from "lucide-react";
+import { ClipboardList, ChevronDown, Check, X } from "lucide-react";
+import { useState } from "react";
 import type { Todo } from "@/hooks/useTodos";
 import { cn } from "@/lib/utils";
 
@@ -15,6 +16,7 @@ interface TodoPanelProps {
   todos: Todo[];
   loading: boolean;
   activeTodo: Todo | null;
+  disabled?: boolean;
   onSelect: (todo: Todo) => void;
   onDeselect: () => void;
   onAdd: (content: string, estimationMinutes: number) => void;
@@ -26,19 +28,41 @@ export function TodoPanel({
   todos,
   loading,
   activeTodo,
+  disabled = false,
   onSelect,
   onDeselect,
   onAdd,
   onDelete,
   onToggleDone,
 }: TodoPanelProps) {
+  const [open, setOpen] = useState(false);
+
+  const handleSelect = (todo: Todo) => {
+    onSelect(todo);
+    setOpen(false);
+  };
+
+  // When disabled with an active task: show a static, non-interactive display
+  if (disabled && activeTodo) {
+    return (
+      <div
+        className="w-full rounded-lg border border-primary/40 bg-primary/5 px-3 py-2.5 text-left opacity-75"
+      >
+        <div className="flex items-center gap-2.5">
+          <Check className="h-4 w-4 shrink-0 text-primary" />
+          <p className="min-w-0 flex-1 text-sm font-medium truncate text-foreground">{activeTodo.content}</p>
+        </div>
+      </div>
+    );
+  }
+
   return (
-    <Sheet>
+    <Sheet open={open} onOpenChange={setOpen}>
       <SheetTrigger asChild>
         <button
           type="button"
           className={cn(
-            "w-full max-w-xs rounded-lg border px-3 py-2.5 text-left transition-colors cursor-pointer",
+            "w-full rounded-lg border px-3 py-2.5 text-left transition-colors cursor-pointer",
             activeTodo
               ? "border-primary bg-primary/5 hover:bg-primary/10"
               : "border-dashed border-muted-foreground/30 hover:border-muted-foreground/50 hover:bg-muted/50",
@@ -47,13 +71,7 @@ export function TodoPanel({
           {activeTodo ? (
             <div className="flex items-center gap-2.5">
               <Check className="h-4 w-4 shrink-0 text-primary" />
-              <div className="min-w-0 flex-1">
-                <p className="text-sm font-medium truncate text-foreground">{activeTodo.content}</p>
-                <div className="flex items-center gap-1 text-xs text-muted-foreground">
-                  <Clock className="h-3 w-3" />
-                  <span>{activeTodo.timeSpentMinutes}/{activeTodo.estimationMinutes} Min.</span>
-                </div>
-              </div>
+              <p className="min-w-0 flex-1 text-sm font-medium truncate text-foreground">{activeTodo.content}</p>
               <button
                 type="button"
                 className="shrink-0 rounded-sm p-0.5 text-muted-foreground hover:text-foreground hover:bg-muted transition-colors cursor-pointer"
@@ -88,7 +106,7 @@ export function TodoPanel({
               <TodoList
                 todos={todos}
                 activeTodoId={activeTodo?.id ?? null}
-                onSelect={onSelect}
+                onSelect={handleSelect}
                 onDelete={onDelete}
                 onToggleDone={onToggleDone}
               />

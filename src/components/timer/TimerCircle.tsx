@@ -69,7 +69,7 @@ export function TimerCircle({ progress, minutes, seconds, variant = "pomodoro", 
   };
 
   return (
-    <div className="relative w-[60vw] max-w-56 sm:max-w-88 md:max-w-104 lg:max-w-md aspect-square">
+    <div className="relative aspect-square w-[min(70vw,calc(100dvh-18rem))] max-w-72 sm:max-w-96 md:max-w-md lg:max-w-xl">
       <svg viewBox="0 0 220 220" className="w-full h-full -rotate-90">
         <circle
           cx="110"

@@ -48,7 +48,7 @@ export function HomePage({
   onTimerRunningChange,
 }: HomePageProps) {
   const [activeTodo, setActiveTodo] = useState<Todo | null>(getRestoredTodo);
-  const [, setTimerStatus] = useState<CombinedTimerStatus>("idle");
+  const [timerStatus, setTimerStatus] = useState<CombinedTimerStatus>("idle");
 
   const handleSelectTodo = (todo: Todo) => {
     setActiveTodo((prev) => (prev?.id === todo.id ? null : todo));
@@ -99,33 +99,56 @@ export function HomePage({
     onTimerRunningChange(status !== "idle" && status !== "completed");
   }, [onTimerRunningChange]);
 
-  return (
-    <main className="flex-1 flex flex-col items-center justify-center gap-8 px-4 py-8">
-      <PomodoroTimer
-        pomodoroMinutes={pomodoroMinutes}
-        breakMinutes={breakMinutes}
-        overtimeMaxMinutes={overtimeMaxMinutes}
-        overtimeChimeIntervalMinutes={overtimeChimeIntervalMinutes}
-        allowEarlyFinish={allowEarlyFinish}
-        silentMode={silentMode}
-        activeTodo={activeTodo}
-        onPomodoroComplete={handlePomodoroComplete}
-        onEarlyFinish={handleEarlyFinish}
-        onOvertimeStop={handleOvertimeStop}
-        onToggleDone={handleToggleDone}
-        onStatusChange={handleStatusChange}
-      />
+  const isTimerActive = timerStatus !== "idle" && timerStatus !== "completed";
+  const isBreak = timerStatus === "break";
 
-      <TodoPanel
-        todos={todos}
-        loading={todosLoading}
-        activeTodo={activeTodo}
-        onSelect={handleSelectTodo}
-        onDeselect={() => setActiveTodo(null)}
-        onAdd={addTodo}
-        onDelete={deleteTodo}
-        onToggleDone={handleToggleDone}
-      />
-    </main>
+  return (
+    <PomodoroTimer
+      pomodoroMinutes={pomodoroMinutes}
+      breakMinutes={breakMinutes}
+      overtimeMaxMinutes={overtimeMaxMinutes}
+      overtimeChimeIntervalMinutes={overtimeChimeIntervalMinutes}
+      allowEarlyFinish={allowEarlyFinish}
+      silentMode={silentMode}
+      activeTodo={activeTodo}
+      onPomodoroComplete={handlePomodoroComplete}
+      onEarlyFinish={handleEarlyFinish}
+      onOvertimeStop={handleOvertimeStop}
+      onToggleDone={handleToggleDone}
+      onStatusChange={handleStatusChange}
+    >
+      {(timerDisplay, controls) => (
+        <main className="flex-1 flex flex-col">
+          {/* Timer display area — fills available space, centers the circle */}
+          <div className="flex-1 flex items-center justify-center px-4 py-4">
+            <div className="flex flex-col items-center">
+              {timerDisplay}
+            </div>
+          </div>
+
+          {/* Bottom bar — task selector + action buttons */}
+          <div className="border-t bg-background/80 backdrop-blur-sm px-4 py-3">
+            <div className={`mx-auto max-w-lg flex items-center gap-3 ${isBreak ? "justify-center" : ""}`}>
+              {!isBreak && (
+                <div className="min-w-0 flex-1">
+                  <TodoPanel
+                    todos={todos}
+                    loading={todosLoading}
+                    activeTodo={activeTodo}
+                    disabled={isTimerActive}
+                    onSelect={handleSelectTodo}
+                    onDeselect={() => setActiveTodo(null)}
+                    onAdd={addTodo}
+                    onDelete={deleteTodo}
+                    onToggleDone={handleToggleDone}
+                  />
+                </div>
+              )}
+              {controls}
+            </div>
+          </div>
+        </main>
+      )}
+    </PomodoroTimer>
   );
 }

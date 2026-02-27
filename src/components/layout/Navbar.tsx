@@ -1,3 +1,4 @@
+import logoSrc from "@/assets/eisenmate-icon.png";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -58,18 +59,7 @@ export function Navbar({
       <div className="max-w-5xl mx-auto flex items-center justify-between px-4 h-14">
         <div className="flex items-center gap-4">
           <div className="flex items-center gap-1.5">
-            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" className="h-7 w-7 shrink-0">
-              <defs>
-                <linearGradient id="logo-g" x1="0" y1="0" x2="1" y2="1">
-                  <stop offset="0%" stopColor="#4A5568" />
-                  <stop offset="100%" stopColor="#1A202C" />
-                </linearGradient>
-              </defs>
-              <ellipse cx="32" cy="38" rx="18" ry="22" fill="url(#logo-g)" />
-              <rect x="26" y="14" width="12" height="6" rx="2" fill="#718096" />
-              <line x1="38" y1="18" x2="44" y2="6" stroke="#E53E3E" strokeWidth="3" strokeLinecap="round" />
-              <circle cx="44" cy="5" r="3" fill="#E53E3E" />
-            </svg>
+            <img src={logoSrc} alt="Eisenmate" className="h-7 w-7 shrink-0" />
             <span className="hidden sm:inline text-xl font-bold text-primary">Eisenmate</span>
           </div>
 
