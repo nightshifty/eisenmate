@@ -202,6 +202,9 @@ describe("HomePage — double-click to override pomodoro duration", () => {
     act(() => { vi.advanceTimersByTime(121_000); });
     fireEvent.click(screen.getByRole("button", { name: /abschließen/i }));
 
+    // Dismiss the completion dialog (no active task → "Pomodoro abschließen")
+    fireEvent.click(screen.getByRole("button", { name: /pomodoro abschließen$/i }));
+
     // Now in break phase — skip break
     fireEvent.click(screen.getByRole("button", { name: /überspringen/i }));
 
