@@ -83,7 +83,9 @@
     "task_other": "{{count}} Aufgaben",
     "keepWorking": "Weiter arbeiten",
     "pomodoro_one": "Pomodoro",
-    "pomodoro_other": "Pomodoros"
+    "pomodoro_other": "Pomodoros",
+    "start": "Start",
+    "end": "Ende"
   },
   "eisenhower": {
     "matrix": "Eisenhower-Matrix",

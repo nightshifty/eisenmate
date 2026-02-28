@@ -142,12 +142,39 @@ describe("useSessionTimer — getSummary + stop", () => {
     expect(getSessionTimerState()).not.toBeNull();
   });
 
+  it("getSummary includes startTime and endTime timestamps", () => {
+    const { result } = renderHook(() => useSessionTimer(true));
+    const beforeStart = Date.now();
+    act(() => result.current.start());
+
+    act(() => vi.advanceTimersByTime(10 * 60_000));
+
+    const summary = result.current.getSummary();
+    expect(summary).not.toBeNull();
+    expect(summary!.startTime).toBeGreaterThanOrEqual(beforeStart);
+    expect(summary!.endTime).toBeGreaterThan(summary!.startTime);
+    expect(summary!.endTime - summary!.startTime).toBeGreaterThanOrEqual(10 * 60_000);
+  });
+
   it("stop clears state", () => {
     const { result } = renderHook(() => useSessionTimer(true));
     act(() => result.current.start());
     act(() => result.current.recordPomodoro(25, "Task A"));
 
     act(() => result.current.stop());
+
+    expect(result.current.isRunning).toBe(false);
+    expect(getSessionTimerState()).toBeNull();
+  });
+
+  it("stop accepts optional adjusted start/end times", () => {
+    const { result } = renderHook(() => useSessionTimer(true));
+    act(() => result.current.start());
+    act(() => result.current.recordPomodoro(25, "Task A"));
+
+    const adjustedStart = Date.now() - 60 * 60_000;
+    const adjustedEnd = Date.now() - 30 * 60_000;
+    act(() => result.current.stop(adjustedStart, adjustedEnd));
 
     expect(result.current.isRunning).toBe(false);
     expect(getSessionTimerState()).toBeNull();

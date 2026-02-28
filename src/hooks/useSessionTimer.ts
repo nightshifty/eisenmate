@@ -13,6 +13,8 @@ export interface SessionSummary {
   productivityPercent: number;
   longestPomodoroMinutes: number;
   todoNames: string[];
+  startTime: number; // timestamp ms
+  endTime: number;   // timestamp ms
 }
 
 export function useSessionTimer(enabled: boolean) {
@@ -86,7 +88,8 @@ export function useSessionTimer(enabled: boolean) {
   );
 
   const buildSummary = useCallback((s: SessionTimerState): SessionSummary => {
-    const totalMs = Date.now() - s.startTime;
+    const endTime = Date.now();
+    const totalMs = endTime - s.startTime;
     const totalMinutes = Math.round(totalMs / 60000);
     return {
       totalMinutes,
@@ -98,6 +101,8 @@ export function useSessionTimer(enabled: boolean) {
           : 0,
       longestPomodoroMinutes: s.longestPomodoroMinutes,
       todoNames: s.todoNames,
+      startTime: s.startTime,
+      endTime,
     };
   }, []);
 
@@ -106,11 +111,16 @@ export function useSessionTimer(enabled: boolean) {
     return buildSummary(state);
   }, [state, buildSummary]);
 
-  const stop = useCallback((): void => {
-    clearSessionTimerState();
-    setState(null);
-    setElapsedMs(0);
-  }, []);
+  const stop = useCallback(
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    (_adjustedStartTime?: number, _adjustedEndTime?: number): void => {
+      // adjustedStartTime / adjustedEndTime are accepted for future use
+      // (e.g. persisting corrected session duration in analytics).
+      // Currently the session timer state is simply cleared on stop.
+      clearSessionTimerState();
+      setState(null);
+      setElapsedMs(0);
+    }, []);
 
   // Format elapsed time as HH:MM:SS
   const totalSeconds = Math.floor(elapsedMs / 1000);

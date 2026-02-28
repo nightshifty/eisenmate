@@ -32,8 +32,8 @@ export default function App() {
     }
   }, [sessionTimer]);
 
-  const handleSummaryConfirm = useCallback(() => {
-    sessionTimer.stop();
+  const handleSummaryConfirm = useCallback((adjustedStartTime?: number, adjustedEndTime?: number) => {
+    sessionTimer.stop(adjustedStartTime, adjustedEndTime);
     setSummaryDialogOpen(false);
     setPendingSummary(null);
   }, [sessionTimer]);
