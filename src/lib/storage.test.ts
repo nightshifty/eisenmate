@@ -6,8 +6,13 @@ import {
   getSessions,
   saveSessions,
   getTimerState,
+  getTimerStateRaw,
   saveTimerState,
   clearTimerState,
+  getSessionTimerState,
+  getSessionTimerStateRaw,
+  saveSessionTimerState,
+  clearSessionTimerState,
   generateId,
   exportAllData,
   importAllData,
@@ -26,6 +31,7 @@ import {
   type Todo,
   type Session,
   type TimerState,
+  type SessionTimerState,
   type ExportData,
   type GoogleTokenData,
 } from "./storage";
@@ -169,7 +175,9 @@ describe("timer state storage", () => {
       activeTodoId: "todo-1",
     };
     saveTimerState(state);
-    expect(getTimerState()).toEqual(state);
+    const result = getTimerState();
+    expect(result).toMatchObject(state);
+    expect(result?.updatedAt).toBeTruthy();
   });
 
   it("saves and reads paused state", () => {
@@ -180,7 +188,9 @@ describe("timer state storage", () => {
       activeTodoId: null,
     };
     saveTimerState(state);
-    expect(getTimerState()).toEqual(state);
+    const result = getTimerState();
+    expect(result).toMatchObject(state);
+    expect(result?.updatedAt).toBeTruthy();
   });
 
   it("clears timer state", () => {
@@ -674,5 +684,499 @@ describe("importAllData – merge mode with tombstones", () => {
     const todos = getTodos();
     expect(todos).toHaveLength(1);
     expect(todos[0].id).toBe("keep");
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Timer idle sentinel and updatedAt
+// ---------------------------------------------------------------------------
+
+describe("timer idle sentinel", () => {
+  it("clearTimerState writes an idle sentinel instead of removing key", () => {
+    saveTimerState({
+      status: "running",
+      endTime: Date.now() + 60000,
+      pomodoroMinutes: 25,
+      activeTodoId: null,
+    });
+    clearTimerState();
+
+    // getTimerState returns null (backward compat)
+    expect(getTimerState()).toBeNull();
+
+    // getTimerStateRaw returns the idle sentinel
+    const raw = getTimerStateRaw();
+    expect(raw).not.toBeNull();
+    expect(raw!.status).toBe("idle");
+    expect(raw!.updatedAt).toBeTruthy();
+  });
+
+  it("clearSessionTimerState writes an idle sentinel instead of removing key", () => {
+    const sessionState: SessionTimerState = {
+      startTime: Date.now(),
+      pomodoroCount: 2,
+      focusMinutes: 50,
+      longestPomodoroMinutes: 25,
+      todoNames: ["Task"],
+      sessionSessions: [],
+    };
+    saveSessionTimerState(sessionState);
+    clearSessionTimerState();
+
+    expect(getSessionTimerState()).toBeNull();
+
+    const raw = getSessionTimerStateRaw();
+    expect(raw).not.toBeNull();
+    expect((raw as { status: string }).status).toBe("idle");
+    expect(raw!.updatedAt).toBeTruthy();
+  });
+
+  it("getTimerState returns null for legacy removed key", () => {
+    // Simulate old behavior where key was removed entirely
+    localStorage.removeItem("eisenmate_timer");
+    expect(getTimerState()).toBeNull();
+    expect(getTimerStateRaw()).toBeNull();
+  });
+
+  it("saveTimerState adds updatedAt automatically", () => {
+    saveTimerState({
+      status: "running",
+      endTime: Date.now() + 60000,
+      pomodoroMinutes: 25,
+      activeTodoId: null,
+    });
+    const raw = getTimerStateRaw();
+    expect(raw?.updatedAt).toBeTruthy();
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Timer merge — last-write-wins with updatedAt
+// ---------------------------------------------------------------------------
+
+describe("importAllData – merge mode timer state", () => {
+  it("remote running timer wins when local has no timer (never started)", () => {
+    // Local: no timer at all (null)
+    const remoteTimer: TimerState = {
+      status: "running",
+      endTime: Date.now() + 60000,
+      pomodoroMinutes: 25,
+      activeTodoId: "t1",
+      updatedAt: "2025-06-01T12:00:00.000Z",
+    };
+
+    const importData: ExportData = {
+      version: 1,
+      app: "eisenmate",
+      exportedAt: "2025-06-01T00:00:00.000Z",
+      data: {
+        todos: [],
+        sessions: [],
+        settings: getSettings(),
+        theme: "light",
+        timerState: remoteTimer,
+      },
+    };
+
+    importAllData(importData, "merge");
+
+    const result = getTimerState();
+    expect(result).not.toBeNull();
+    expect(result!.status).toBe("running");
+    expect(result!.activeTodoId).toBe("t1");
+  });
+
+  it("local cancellation wins over stale remote running timer", () => {
+    // Local: user just cancelled → idle sentinel with fresh updatedAt
+    saveTimerState({
+      status: "running",
+      endTime: Date.now() + 60000,
+      pomodoroMinutes: 25,
+      activeTodoId: null,
+    });
+    clearTimerState(); // writes idle sentinel with current timestamp
+
+    const localRaw = getTimerStateRaw();
+    expect(localRaw!.status).toBe("idle");
+
+    // Remote: stale running timer from before cancellation
+    const remoteTimer: TimerState = {
+      status: "running",
+      endTime: Date.now() + 60000,
+      pomodoroMinutes: 25,
+      activeTodoId: "t1",
+      updatedAt: "2025-01-01T00:00:00.000Z", // older than local
+    };
+
+    const importData: ExportData = {
+      version: 1,
+      app: "eisenmate",
+      exportedAt: "2025-06-01T00:00:00.000Z",
+      data: {
+        todos: [],
+        sessions: [],
+        settings: getSettings(),
+        theme: "light",
+        timerState: remoteTimer,
+      },
+    };
+
+    importAllData(importData, "merge");
+
+    // Timer should remain cancelled (idle)
+    expect(getTimerState()).toBeNull();
+    expect(getTimerStateRaw()!.status).toBe("idle");
+  });
+
+  it("remote running timer wins over old local idle sentinel", () => {
+    // Local: old cancellation
+    clearTimerState();
+
+    // Manually backdate the local sentinel
+    localStorage.setItem("eisenmate_timer", JSON.stringify({
+      status: "idle",
+      updatedAt: "2025-01-01T00:00:00.000Z",
+    }));
+
+    // Remote: newer running timer (started on another device)
+    const remoteTimer: TimerState = {
+      status: "running",
+      endTime: Date.now() + 60000,
+      pomodoroMinutes: 25,
+      activeTodoId: "t2",
+      updatedAt: "2025-06-01T12:00:00.000Z",
+    };
+
+    const importData: ExportData = {
+      version: 1,
+      app: "eisenmate",
+      exportedAt: "2025-06-01T00:00:00.000Z",
+      data: {
+        todos: [],
+        sessions: [],
+        settings: getSettings(),
+        theme: "light",
+        timerState: remoteTimer,
+      },
+    };
+
+    importAllData(importData, "merge");
+
+    const result = getTimerState();
+    expect(result).not.toBeNull();
+    expect(result!.status).toBe("running");
+    expect(result!.activeTodoId).toBe("t2");
+  });
+
+  it("local running timer is kept when it is newer than remote", () => {
+    // Local: running timer with fresh updatedAt
+    saveTimerState({
+      status: "running",
+      endTime: Date.now() + 120000,
+      pomodoroMinutes: 30,
+      activeTodoId: "local-t1",
+    });
+
+    // Remote: older running timer
+    const remoteTimer: TimerState = {
+      status: "running",
+      endTime: Date.now() + 60000,
+      pomodoroMinutes: 25,
+      activeTodoId: "remote-t1",
+      updatedAt: "2025-01-01T00:00:00.000Z",
+    };
+
+    const importData: ExportData = {
+      version: 1,
+      app: "eisenmate",
+      exportedAt: "2025-06-01T00:00:00.000Z",
+      data: {
+        todos: [],
+        sessions: [],
+        settings: getSettings(),
+        theme: "light",
+        timerState: remoteTimer,
+      },
+    };
+
+    importAllData(importData, "merge");
+
+    const result = getTimerState();
+    expect(result).not.toBeNull();
+    expect(result!.activeTodoId).toBe("local-t1");
+  });
+
+  it("does nothing when remote has no timer state", () => {
+    saveTimerState({
+      status: "running",
+      endTime: Date.now() + 60000,
+      pomodoroMinutes: 25,
+      activeTodoId: "t1",
+    });
+
+    const importData: ExportData = {
+      version: 1,
+      app: "eisenmate",
+      exportedAt: "2025-06-01T00:00:00.000Z",
+      data: {
+        todos: [],
+        sessions: [],
+        settings: getSettings(),
+        theme: "light",
+        timerState: null,
+      },
+    };
+
+    importAllData(importData, "merge");
+
+    expect(getTimerState()!.activeTodoId).toBe("t1");
+  });
+});
+
+describe("importAllData – merge mode session timer state", () => {
+  it("local session timer cancellation wins over stale remote", () => {
+    // Start and then stop session timer
+    saveSessionTimerState({
+      startTime: Date.now(),
+      pomodoroCount: 1,
+      focusMinutes: 25,
+      longestPomodoroMinutes: 25,
+      todoNames: ["Task"],
+      sessionSessions: [],
+    });
+    clearSessionTimerState(); // idle sentinel
+
+    const remoteSession: SessionTimerState = {
+      startTime: Date.now() - 3600000,
+      pomodoroCount: 3,
+      focusMinutes: 75,
+      longestPomodoroMinutes: 25,
+      todoNames: ["Old task"],
+      sessionSessions: [],
+      updatedAt: "2025-01-01T00:00:00.000Z", // older
+    };
+
+    const importData: ExportData = {
+      version: 1,
+      app: "eisenmate",
+      exportedAt: "2025-06-01T00:00:00.000Z",
+      data: {
+        todos: [],
+        sessions: [],
+        settings: getSettings(),
+        theme: "light",
+        sessionTimerState: remoteSession,
+      },
+    };
+
+    importAllData(importData, "merge");
+
+    expect(getSessionTimerState()).toBeNull();
+  });
+
+  it("remote session timer wins when local has none", () => {
+    const remoteSession: SessionTimerState = {
+      startTime: Date.now() - 1800000,
+      pomodoroCount: 2,
+      focusMinutes: 50,
+      longestPomodoroMinutes: 25,
+      todoNames: ["Remote task"],
+      sessionSessions: [],
+      updatedAt: "2025-06-01T12:00:00.000Z",
+    };
+
+    const importData: ExportData = {
+      version: 1,
+      app: "eisenmate",
+      exportedAt: "2025-06-01T00:00:00.000Z",
+      data: {
+        todos: [],
+        sessions: [],
+        settings: getSettings(),
+        theme: "light",
+        sessionTimerState: remoteSession,
+      },
+    };
+
+    importAllData(importData, "merge");
+
+    const result = getSessionTimerState();
+    expect(result).not.toBeNull();
+    expect(result!.pomodoroCount).toBe(2);
+  });
+
+  it("exports idle sentinel for timer and session timer", () => {
+    clearTimerState();
+    clearSessionTimerState();
+
+    const exported = exportAllData();
+    expect(exported.data.timerState).toMatchObject({ status: "idle" });
+    expect(exported.data.sessionTimerState).toMatchObject({ status: "idle" });
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Cross-device timer sync — start on one device, stop on another
+// ---------------------------------------------------------------------------
+
+describe("importAllData – merge mode cross-device timer workflows", () => {
+  it("remote stop (idle sentinel) overwrites local running timer when remote is newer", () => {
+    // Gerät A: timer still running (started at T1, updatedAt = T1)
+    localStorage.setItem("eisenmate_timer", JSON.stringify({
+      status: "running",
+      endTime: Date.now() + 60000,
+      pomodoroMinutes: 25,
+      activeTodoId: "t1",
+      updatedAt: "2025-06-01T10:00:00.000Z",
+    }));
+
+    // Gerät B stopped the same timer (idle sentinel, updatedAt = T2 > T1)
+    const importData: ExportData = {
+      version: 1,
+      app: "eisenmate",
+      exportedAt: "2025-06-01T00:00:00.000Z",
+      data: {
+        todos: [],
+        sessions: [],
+        settings: getSettings(),
+        theme: "light",
+        timerState: { status: "idle" as const, updatedAt: "2025-06-01T11:00:00.000Z" },
+      },
+    };
+
+    importAllData(importData, "merge");
+
+    // Timer should be stopped
+    expect(getTimerState()).toBeNull();
+    expect(getTimerStateRaw()!.status).toBe("idle");
+  });
+
+  it("remote running timer appears on device that has no timer", () => {
+    // Local: no timer at all
+    const remoteTimer: TimerState = {
+      status: "running",
+      endTime: Date.now() + 60000,
+      pomodoroMinutes: 25,
+      activeTodoId: "remote-todo",
+      updatedAt: "2025-06-01T12:00:00.000Z",
+    };
+
+    const importData: ExportData = {
+      version: 1,
+      app: "eisenmate",
+      exportedAt: "2025-06-01T00:00:00.000Z",
+      data: {
+        todos: [],
+        sessions: [],
+        settings: getSettings(),
+        theme: "light",
+        timerState: remoteTimer,
+      },
+    };
+
+    importAllData(importData, "merge");
+
+    const result = getTimerState();
+    expect(result).not.toBeNull();
+    expect(result!.activeTodoId).toBe("remote-todo");
+  });
+
+  it("remote session stop overwrites local running session when remote is newer", () => {
+    // Gerät A: session running (started at T1)
+    saveSessionTimerState({
+      startTime: Date.now() - 3600000,
+      pomodoroCount: 3,
+      focusMinutes: 75,
+      longestPomodoroMinutes: 25,
+      todoNames: ["Task"],
+      sessionSessions: [],
+    });
+
+    // Gerät B ended the session (idle sentinel, newer)
+    const importData: ExportData = {
+      version: 1,
+      app: "eisenmate",
+      exportedAt: "2025-06-01T00:00:00.000Z",
+      data: {
+        todos: [],
+        sessions: [],
+        settings: getSettings(),
+        theme: "light",
+        sessionTimerState: { status: "idle" as const, updatedAt: "2099-01-01T00:00:00.000Z" },
+      },
+    };
+
+    importAllData(importData, "merge");
+
+    expect(getSessionTimerState()).toBeNull();
+  });
+
+  it("newer remote running timer overwrites older local running timer (last-write-wins)", () => {
+    // Gerät A: timer started at T1
+    localStorage.setItem("eisenmate_timer", JSON.stringify({
+      status: "running",
+      endTime: Date.now() + 60000,
+      pomodoroMinutes: 25,
+      activeTodoId: "old-todo",
+      updatedAt: "2025-06-01T10:00:00.000Z",
+    }));
+
+    // Gerät B: started a different timer at T2 (newer)
+    const remoteTimer: TimerState = {
+      status: "running",
+      endTime: Date.now() + 120000,
+      pomodoroMinutes: 30,
+      activeTodoId: "new-todo",
+      updatedAt: "2025-06-01T11:00:00.000Z",
+    };
+
+    const importData: ExportData = {
+      version: 1,
+      app: "eisenmate",
+      exportedAt: "2025-06-01T00:00:00.000Z",
+      data: {
+        todos: [],
+        sessions: [],
+        settings: getSettings(),
+        theme: "light",
+        timerState: remoteTimer,
+      },
+    };
+
+    importAllData(importData, "merge");
+
+    const result = getTimerState();
+    expect(result!.activeTodoId).toBe("new-todo");
+  });
+
+  it("allows remote timer to win when local is idle sentinel", () => {
+    clearTimerState();
+
+    const remoteTimer: TimerState = {
+      status: "running",
+      endTime: Date.now() + 60000,
+      pomodoroMinutes: 25,
+      activeTodoId: "remote-new",
+      updatedAt: "2099-01-01T00:00:00.000Z",
+    };
+
+    const importData: ExportData = {
+      version: 1,
+      app: "eisenmate",
+      exportedAt: "2025-06-01T00:00:00.000Z",
+      data: {
+        todos: [],
+        sessions: [],
+        settings: getSettings(),
+        theme: "light",
+        timerState: remoteTimer,
+      },
+    };
+
+    importAllData(importData, "merge");
+
+    const result = getTimerState();
+    expect(result).not.toBeNull();
+    expect(result!.activeTodoId).toBe("remote-new");
   });
 });

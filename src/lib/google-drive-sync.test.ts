@@ -246,7 +246,7 @@ describe("syncWithDrive — sync with existing remote file", () => {
   });
 
   it("imports remote timer state when no local timer is running", async () => {
-    const remoteTimer = { status: "running" as const, endTime: Date.now() + 60000, pomodoroMinutes: 25, activeTodoId: null };
+    const remoteTimer = { status: "running" as const, endTime: Date.now() + 60000, pomodoroMinutes: 25, activeTodoId: null, updatedAt: new Date().toISOString() };
     const remoteData = makeExportData({ timerState: remoteTimer });
     mockDriveApi({ findFileId: "file-123", remoteData });
 
@@ -265,6 +265,7 @@ describe("syncWithDrive — sync with existing remote file", () => {
       longestPomodoroMinutes: 25,
       todoNames: ["Task A"],
       sessionSessions: [],
+      updatedAt: new Date().toISOString(),
     };
     const remoteData = makeExportData({ sessionTimerState: remoteSessionTimer });
     mockDriveApi({ findFileId: "file-123", remoteData });

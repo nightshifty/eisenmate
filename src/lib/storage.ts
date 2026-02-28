@@ -42,6 +42,7 @@ export interface SessionTimerState {
   longestPomodoroMinutes: number;
   todoNames: string[]; // unique task names worked on
   sessionSessions: string[]; // IDs of sessions created during this session timer
+  updatedAt?: string;
 }
 
 export interface TimerState {
@@ -51,6 +52,21 @@ export interface TimerState {
   remainingMs?: number;
   pomodoroMinutes: number;
   activeTodoId: string | null;
+  updatedAt?: string;
+}
+
+/**
+ * Sentinel value stored in localStorage when a timer is explicitly cleared.
+ * Allows sync merge to distinguish "user cancelled" from "never started".
+ */
+export interface TimerIdleSentinel {
+  status: "idle";
+  updatedAt: string;
+}
+
+export interface SessionTimerIdleSentinel {
+  status: "idle";
+  updatedAt: string;
 }
 
 const KEYS = {
@@ -130,30 +146,46 @@ export function saveSessions(sessions: Session[]): void {
 }
 
 export function getTimerState(): TimerState | null {
-  return read<TimerState | null>(KEYS.timer, null);
+  const raw = read<TimerState | TimerIdleSentinel | null>(KEYS.timer, null);
+  if (!raw || raw.status === "idle") return null;
+  return raw as TimerState;
+}
+
+/** Raw read including idle sentinel — used by sync merge logic. */
+export function getTimerStateRaw(): TimerState | TimerIdleSentinel | null {
+  return read<TimerState | TimerIdleSentinel | null>(KEYS.timer, null);
 }
 
 export function saveTimerState(state: TimerState): void {
-  write(KEYS.timer, state);
+  write(KEYS.timer, { ...state, updatedAt: new Date().toISOString() });
   dispatchDataChanged();
 }
 
 export function clearTimerState(): void {
-  localStorage.removeItem(KEYS.timer);
+  const sentinel: TimerIdleSentinel = { status: "idle", updatedAt: new Date().toISOString() };
+  write(KEYS.timer, sentinel);
   dispatchDataChanged();
 }
 
 export function getSessionTimerState(): SessionTimerState | null {
-  return read<SessionTimerState | null>(KEYS.sessionTimer, null);
+  const raw = read<SessionTimerState | SessionTimerIdleSentinel | null>(KEYS.sessionTimer, null);
+  if (!raw || (raw as SessionTimerIdleSentinel).status === "idle") return null;
+  return raw as SessionTimerState;
+}
+
+/** Raw read including idle sentinel — used by sync merge logic. */
+export function getSessionTimerStateRaw(): SessionTimerState | SessionTimerIdleSentinel | null {
+  return read<SessionTimerState | SessionTimerIdleSentinel | null>(KEYS.sessionTimer, null);
 }
 
 export function saveSessionTimerState(state: SessionTimerState): void {
-  write(KEYS.sessionTimer, state);
+  write(KEYS.sessionTimer, { ...state, updatedAt: new Date().toISOString() });
   dispatchDataChanged();
 }
 
 export function clearSessionTimerState(): void {
-  localStorage.removeItem(KEYS.sessionTimer);
+  const sentinel: SessionTimerIdleSentinel = { status: "idle", updatedAt: new Date().toISOString() };
+  write(KEYS.sessionTimer, sentinel);
   dispatchDataChanged();
 }
 
@@ -274,8 +306,8 @@ export interface ExportData {
     deletedTodoIds?: Tombstone[];
     deletedSessionIds?: Tombstone[];
     /** Timer state (sync only — optional for backward compat) */
-    timerState?: TimerState | null;
-    sessionTimerState?: SessionTimerState | null;
+    timerState?: TimerState | TimerIdleSentinel | null;
+    sessionTimerState?: SessionTimerState | SessionTimerIdleSentinel | null;
   };
 }
 
@@ -294,8 +326,8 @@ export function exportAllData(): ExportData {
       theme,
       deletedTodoIds: getDeletedTodoIds(),
       deletedSessionIds: getDeletedSessionIds(),
-      timerState: getTimerState(),
-      sessionTimerState: getSessionTimerState(),
+      timerState: getTimerStateRaw(),
+      sessionTimerState: getSessionTimerStateRaw(),
     },
   };
 }
@@ -406,18 +438,27 @@ export function importAllData(
     saveSettings(settings);
     if (theme) localStorage.setItem(THEME_KEY, theme);
 
-    // 5. Merge timer state — remote wins if local has no active timer
+    // 5. Merge timer state — last-write-wins based on updatedAt.
+    //    The idle sentinel (written on cancel/stop) participates in the
+    //    comparison so that a deliberate cancellation is never overwritten
+    //    by a stale remote running timer.
     const remoteTimer = exported.data.timerState ?? null;
-    const localTimer = getTimerState();
-    if (remoteTimer && !localTimer) {
-      saveTimerState(remoteTimer);
+    const localTimerRaw = getTimerStateRaw();
+    const remoteTimerUpdatedAt = remoteTimer?.updatedAt ?? "";
+    const localTimerUpdatedAt = localTimerRaw?.updatedAt ?? "";
+
+    if (remoteTimer && remoteTimerUpdatedAt > localTimerUpdatedAt) {
+      write(KEYS.timer, remoteTimer);
     }
 
-    // 6. Merge session timer state — remote wins if local has no active session
+    // 6. Merge session timer state — same last-write-wins logic
     const remoteSessionTimer = exported.data.sessionTimerState ?? null;
-    const localSessionTimer = getSessionTimerState();
-    if (remoteSessionTimer && !localSessionTimer) {
-      saveSessionTimerState(remoteSessionTimer);
+    const localSessionTimerRaw = getSessionTimerStateRaw();
+    const remoteSessionUpdatedAt = remoteSessionTimer?.updatedAt ?? "";
+    const localSessionTimerUpdatedAt = localSessionTimerRaw?.updatedAt ?? "";
+
+    if (remoteSessionTimer && remoteSessionUpdatedAt > localSessionTimerUpdatedAt) {
+      write(KEYS.sessionTimer, remoteSessionTimer);
     }
   }
 }
