@@ -9,6 +9,8 @@ import { useUserSettings } from "@/hooks/useUserSettings";
 import { useSessions } from "@/hooks/useSessions";
 import { useTheme } from "@/hooks/useTheme";
 import { useSessionTimer, type SessionSummary } from "@/hooks/useSessionTimer";
+import { useGoogleAuth } from "@/hooks/useGoogleAuth";
+import { useSync } from "@/hooks/useSync";
 
 export type Page = "pomodoro" | "eisenhower";
 
@@ -19,6 +21,9 @@ export default function App() {
   const sessionsHook = useSessions(todosHook.refreshTodos);
   const { theme, toggleTheme } = useTheme();
   const [timerRunning, setTimerRunning] = useState(false);
+
+  const googleAuth = useGoogleAuth();
+  const sync = useSync(googleAuth.isSignedIn);
 
   const sessionTimer = useSessionTimer(settingsHook.sessionTimerEnabled);
   const [summaryDialogOpen, setSummaryDialogOpen] = useState(false);
@@ -67,6 +72,8 @@ export default function App() {
         onToggleTheme={toggleTheme}
         silentMode={settingsHook.silentMode}
         onToggleSilentMode={() => settingsHook.updateSettings({ silentMode: !settingsHook.silentMode })}
+        googleAuth={googleAuth}
+        sync={sync}
       />
 
       {settingsHook.sessionTimerEnabled && sessionTimer.isRunning && (

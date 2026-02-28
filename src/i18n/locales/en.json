@@ -139,6 +139,16 @@
     "invalidJson": "The file does not contain valid JSON.",
     "invalidBackup": "The file is not a valid Eisenmate backup file."
   },
+  "sync": {
+    "connectGoogle": "Connect Google Drive",
+    "connecting": "Connecting...",
+    "syncNow": "Sync now",
+    "syncing": "Syncing...",
+    "synced": "Synced",
+    "error": "Sync failed",
+    "lastSync": "Last sync: {{time}}",
+    "disconnect": "Disconnect"
+  },
   "common": {
     "cancel": "Cancel"
   }

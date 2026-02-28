@@ -137,6 +137,16 @@
     "invalidJson": "ファイルに有効なJSONが含まれていません。",
     "invalidBackup": "ファイルは有効なEisenmate バックアップファイルではありません。"
   },
+  "sync": {
+    "connectGoogle": "Google Driveに接続",
+    "connecting": "接続中...",
+    "syncNow": "今すぐ同期",
+    "syncing": "同期中...",
+    "synced": "同期済み",
+    "error": "同期に失敗しました",
+    "lastSync": "最終同期: {{time}}",
+    "disconnect": "切断"
+  },
   "common": {
     "cancel": "キャンセル"
   }

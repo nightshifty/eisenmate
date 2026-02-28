@@ -13,10 +13,21 @@ import {
   importAllData,
   validateExportData,
   parseExportFile,
+  getLastSyncedAt,
+  setLastSyncedAt,
+  getGoogleToken,
+  saveGoogleToken,
+  clearGoogleToken,
+  getDeletedTodoIds,
+  addDeletedTodoId,
+  getDeletedSessionIds,
+  addDeletedSessionId,
+  pruneOldTombstones,
   type Todo,
   type Session,
   type TimerState,
   type ExportData,
+  type GoogleTokenData,
 } from "./storage";
 
 beforeEach(() => {
@@ -53,6 +64,7 @@ describe("todos storage", () => {
         createdAt: "2025-01-01T00:00:00.000Z",
         completedAt: null,
         quadrant: null,
+        updatedAt: "2025-01-01T00:00:00.000Z",
       },
     ];
     saveTodos(todos);
@@ -136,6 +148,7 @@ describe("sessions storage", () => {
         todoContent: "Work",
         durationMinutes: 25,
         completedAt: "2025-01-01T00:00:00.000Z",
+        updatedAt: "2025-01-01T00:00:00.000Z",
       },
     ];
     saveSessions(sessions);
@@ -200,6 +213,7 @@ const makeTodo = (overrides: Partial<Todo> = {}): Todo => ({
   createdAt: "2025-06-01T00:00:00.000Z",
   completedAt: null,
   quadrant: null,
+  updatedAt: "2025-06-01T00:00:00.000Z",
   ...overrides,
 });
 
@@ -209,6 +223,7 @@ const makeSession = (overrides: Partial<Session> = {}): Session => ({
   todoContent: "Test task",
   durationMinutes: 25,
   completedAt: "2025-06-01T00:30:00.000Z",
+  updatedAt: "2025-06-01T00:30:00.000Z",
   ...overrides,
 });
 
@@ -371,15 +386,15 @@ describe("importAllData – merge mode", () => {
     expect(localStorage.getItem("eisenmate_theme")).toBe("dark");
   });
 
-  it("overwrites existing todos with same id during merge", () => {
-    saveTodos([makeTodo({ id: "shared-1", content: "Old content" })]);
+  it("overwrites existing todos with same id when imported is newer", () => {
+    saveTodos([makeTodo({ id: "shared-1", content: "Old content", updatedAt: "2025-06-01T00:00:00.000Z" })]);
 
     const importData: ExportData = {
       version: 1,
       app: "eisenmate",
       exportedAt: "2025-06-01T00:00:00.000Z",
       data: {
-        todos: [makeTodo({ id: "shared-1", content: "Updated content" })],
+        todos: [makeTodo({ id: "shared-1", content: "Updated content", updatedAt: "2025-06-02T00:00:00.000Z" })],
         sessions: [],
         settings: getSettings(),
         theme: "light",
@@ -392,8 +407,29 @@ describe("importAllData – merge mode", () => {
     expect(getTodos()[0].content).toBe("Updated content");
   });
 
-  it("overwrites existing sessions with same id during merge", () => {
-    saveSessions([makeSession({ id: "shared-s1", durationMinutes: 10 })]);
+  it("keeps existing todo when local is newer", () => {
+    saveTodos([makeTodo({ id: "shared-1", content: "Local content", updatedAt: "2025-06-03T00:00:00.000Z" })]);
+
+    const importData: ExportData = {
+      version: 1,
+      app: "eisenmate",
+      exportedAt: "2025-06-01T00:00:00.000Z",
+      data: {
+        todos: [makeTodo({ id: "shared-1", content: "Remote content", updatedAt: "2025-06-01T00:00:00.000Z" })],
+        sessions: [],
+        settings: getSettings(),
+        theme: "light",
+      },
+    };
+
+    importAllData(importData, "merge");
+
+    expect(getTodos()).toHaveLength(1);
+    expect(getTodos()[0].content).toBe("Local content");
+  });
+
+  it("overwrites existing sessions with same id when imported is newer", () => {
+    saveSessions([makeSession({ id: "shared-s1", durationMinutes: 10, updatedAt: "2025-06-01T00:00:00.000Z" })]);
 
     const importData: ExportData = {
       version: 1,
@@ -401,7 +437,7 @@ describe("importAllData – merge mode", () => {
       exportedAt: "2025-06-01T00:00:00.000Z",
       data: {
         todos: [],
-        sessions: [makeSession({ id: "shared-s1", durationMinutes: 30 })],
+        sessions: [makeSession({ id: "shared-s1", durationMinutes: 30, updatedAt: "2025-06-02T00:00:00.000Z" })],
         settings: getSettings(),
         theme: "light",
       },
@@ -411,5 +447,232 @@ describe("importAllData – merge mode", () => {
 
     expect(getSessions()).toHaveLength(1);
     expect(getSessions()[0].durationMinutes).toBe(30);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// updatedAt migration
+// ---------------------------------------------------------------------------
+
+describe("updatedAt migration", () => {
+  it("adds updatedAt from createdAt for todos without updatedAt", () => {
+    const oldTodos = [
+      {
+        id: "1",
+        content: "Old",
+        estimationMinutes: 25,
+        timeSpentMinutes: 0,
+        done: false,
+        createdAt: "2025-01-01T00:00:00.000Z",
+        completedAt: null,
+        quadrant: null,
+      },
+    ];
+    localStorage.setItem("eisenmate_todos", JSON.stringify(oldTodos));
+    const result = getTodos();
+    expect(result[0].updatedAt).toBe("2025-01-01T00:00:00.000Z");
+  });
+
+  it("adds updatedAt from completedAt for done todos without updatedAt", () => {
+    const oldTodos = [
+      {
+        id: "1",
+        content: "Done",
+        estimationMinutes: 25,
+        timeSpentMinutes: 25,
+        done: true,
+        createdAt: "2025-01-01T00:00:00.000Z",
+        completedAt: "2025-01-02T00:00:00.000Z",
+        quadrant: null,
+      },
+    ];
+    localStorage.setItem("eisenmate_todos", JSON.stringify(oldTodos));
+    const result = getTodos();
+    expect(result[0].updatedAt).toBe("2025-01-02T00:00:00.000Z");
+  });
+
+  it("adds updatedAt from completedAt for sessions without updatedAt", () => {
+    const oldSessions = [
+      {
+        id: "s1",
+        todoId: null,
+        todoContent: "Work",
+        durationMinutes: 25,
+        completedAt: "2025-01-01T12:00:00.000Z",
+      },
+    ];
+    localStorage.setItem("eisenmate_sessions", JSON.stringify(oldSessions));
+    const result = getSessions();
+    expect(result[0].updatedAt).toBe("2025-01-01T12:00:00.000Z");
+  });
+
+  it("preserves existing updatedAt values", () => {
+    const todos = [makeTodo({ updatedAt: "2025-03-01T00:00:00.000Z" })];
+    saveTodos(todos);
+    expect(getTodos()[0].updatedAt).toBe("2025-03-01T00:00:00.000Z");
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Sync metadata
+// ---------------------------------------------------------------------------
+
+describe("sync metadata storage", () => {
+  it("returns null for lastSyncedAt when not set", () => {
+    expect(getLastSyncedAt()).toBeNull();
+  });
+
+  it("round-trips lastSyncedAt", () => {
+    setLastSyncedAt("2025-06-01T00:00:00.000Z");
+    expect(getLastSyncedAt()).toBe("2025-06-01T00:00:00.000Z");
+  });
+
+  it("returns null for google token when not set", () => {
+    expect(getGoogleToken()).toBeNull();
+  });
+
+  it("round-trips google token", () => {
+    const token: GoogleTokenData = {
+      accessToken: "ya29.test",
+      expiresAt: Date.now() + 3600000,
+      email: "test@example.com",
+    };
+    saveGoogleToken(token);
+    expect(getGoogleToken()).toEqual(token);
+  });
+
+  it("clears google token", () => {
+    const token: GoogleTokenData = {
+      accessToken: "ya29.test",
+      expiresAt: Date.now() + 3600000,
+      email: "test@example.com",
+    };
+    saveGoogleToken(token);
+    clearGoogleToken();
+    expect(getGoogleToken()).toBeNull();
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Tombstones (deletion tracking for sync)
+// ---------------------------------------------------------------------------
+
+describe("tombstone tracking", () => {
+  it("returns empty arrays when no tombstones exist", () => {
+    expect(getDeletedTodoIds()).toEqual([]);
+    expect(getDeletedSessionIds()).toEqual([]);
+  });
+
+  it("records a deleted todo id", () => {
+    addDeletedTodoId("todo-x");
+    const tombstones = getDeletedTodoIds();
+    expect(tombstones).toHaveLength(1);
+    expect(tombstones[0].id).toBe("todo-x");
+    expect(tombstones[0].deletedAt).toBeTruthy();
+  });
+
+  it("does not duplicate tombstones for same id", () => {
+    addDeletedTodoId("todo-x");
+    addDeletedTodoId("todo-x");
+    expect(getDeletedTodoIds()).toHaveLength(1);
+  });
+
+  it("records a deleted session id", () => {
+    addDeletedSessionId("sess-x");
+    const tombstones = getDeletedSessionIds();
+    expect(tombstones).toHaveLength(1);
+    expect(tombstones[0].id).toBe("sess-x");
+  });
+
+  it("prunes old tombstones", () => {
+    // Manually create an old tombstone
+    localStorage.setItem("eisenmate_deleted_todo_ids", JSON.stringify([
+      { id: "old", deletedAt: "2020-01-01T00:00:00.000Z" },
+      { id: "recent", deletedAt: new Date().toISOString() },
+    ]));
+    pruneOldTombstones();
+    const remaining = getDeletedTodoIds();
+    expect(remaining).toHaveLength(1);
+    expect(remaining[0].id).toBe("recent");
+  });
+});
+
+describe("importAllData – merge mode with tombstones", () => {
+  it("removes locally present items that were deleted remotely", () => {
+    // Local has todo-1 and session-1
+    saveTodos([makeTodo({ id: "todo-1", content: "Local task" })]);
+    saveSessions([makeSession({ id: "sess-1" })]);
+
+    // Remote has them deleted (tombstoned) and doesn't include them
+    const importData: ExportData = {
+      version: 1,
+      app: "eisenmate",
+      exportedAt: "2025-06-01T00:00:00.000Z",
+      data: {
+        todos: [],
+        sessions: [],
+        settings: getSettings(),
+        theme: "light",
+        deletedTodoIds: [{ id: "todo-1", deletedAt: "2025-06-02T00:00:00.000Z" }],
+        deletedSessionIds: [{ id: "sess-1", deletedAt: "2025-06-02T00:00:00.000Z" }],
+      },
+    };
+
+    importAllData(importData, "merge");
+
+    expect(getTodos()).toHaveLength(0);
+    expect(getSessions()).toHaveLength(0);
+  });
+
+  it("removes remotely present items that were deleted locally", () => {
+    // Local has no items but has tombstones
+    saveTodos([]);
+    saveSessions([]);
+    addDeletedTodoId("todo-1");
+    addDeletedSessionId("sess-1");
+
+    // Remote still has the items
+    const importData: ExportData = {
+      version: 1,
+      app: "eisenmate",
+      exportedAt: "2025-06-01T00:00:00.000Z",
+      data: {
+        todos: [makeTodo({ id: "todo-1" })],
+        sessions: [makeSession({ id: "sess-1" })],
+        settings: getSettings(),
+        theme: "light",
+      },
+    };
+
+    importAllData(importData, "merge");
+
+    expect(getTodos()).toHaveLength(0);
+    expect(getSessions()).toHaveLength(0);
+  });
+
+  it("keeps non-tombstoned items while removing tombstoned ones", () => {
+    saveTodos([
+      makeTodo({ id: "keep", content: "Keep me" }),
+      makeTodo({ id: "delete", content: "Delete me" }),
+    ]);
+
+    const importData: ExportData = {
+      version: 1,
+      app: "eisenmate",
+      exportedAt: "2025-06-01T00:00:00.000Z",
+      data: {
+        todos: [],
+        sessions: [],
+        settings: getSettings(),
+        theme: "light",
+        deletedTodoIds: [{ id: "delete", deletedAt: "2025-06-02T00:00:00.000Z" }],
+      },
+    };
+
+    importAllData(importData, "merge");
+
+    const todos = getTodos();
+    expect(todos).toHaveLength(1);
+    expect(todos[0].id).toBe("keep");
   });
 });

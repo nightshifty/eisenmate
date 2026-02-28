@@ -8,15 +8,17 @@ beforeEach(() => {
 
 /** Helper to create and persist a to-do in localStorage */
 function createTodo(overrides: Partial<Todo> = {}): Todo {
+  const now = new Date().toISOString();
   const todo: Todo = {
     id: generateId(),
     content: "Test Task",
     estimationMinutes: 60,
     timeSpentMinutes: 0,
     done: false,
-    createdAt: new Date().toISOString(),
+    createdAt: now,
     completedAt: null,
     quadrant: null,
+    updatedAt: now,
     ...overrides,
   };
   const existing = getTodos();

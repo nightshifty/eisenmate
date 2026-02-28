@@ -137,6 +137,16 @@
     "invalidJson": "Le fichier ne contient pas de JSON valide.",
     "invalidBackup": "Le fichier n'est pas un fichier de sauvegarde Eisenmate valide."
   },
+  "sync": {
+    "connectGoogle": "Connecter Google Drive",
+    "connecting": "Connexion...",
+    "syncNow": "Synchroniser maintenant",
+    "syncing": "Synchronisation...",
+    "synced": "Synchronisé",
+    "error": "Échec de la synchronisation",
+    "lastSync": "Dernière synchronisation : {{time}}",
+    "disconnect": "Déconnecter"
+  },
   "common": {
     "cancel": "Annuler"
   }

@@ -131,6 +131,19 @@ export function useSessionTimer(enabled: boolean) {
     ? `${hours}:${String(minutes).padStart(2, "0")}:${String(seconds).padStart(2, "0")}`
     : `${String(minutes).padStart(2, "0")}:${String(seconds).padStart(2, "0")}`;
 
+  // Auto-refresh when sync completes (e.g. timer started on another device)
+  useEffect(() => {
+    const handler = () => {
+      const synced = enabled ? getSessionTimerState() : null;
+      setState(synced);
+      if (synced) {
+        setElapsedMs(Date.now() - synced.startTime);
+      }
+    };
+    window.addEventListener("eisenmate-sync-complete", handler);
+    return () => window.removeEventListener("eisenmate-sync-complete", handler);
+  }, [enabled]);
+
   return {
     isRunning,
     elapsedMs,

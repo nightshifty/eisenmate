@@ -14,6 +14,7 @@ function makeTodo(overrides: Partial<Todo> = {}): Todo {
     createdAt: overrides.createdAt ?? "2025-01-01T00:00:00.000Z",
     completedAt: overrides.completedAt ?? null,
     quadrant: overrides.quadrant ?? null,
+    updatedAt: overrides.updatedAt ?? overrides.createdAt ?? "2025-01-01T00:00:00.000Z",
   };
 }
 

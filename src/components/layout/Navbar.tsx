@@ -14,9 +14,11 @@ import { TimerSettings } from "@/components/timer/TimerSettings";
 import { AboutPomodoro } from "@/components/help/AboutPomodoro";
 import { HowToUse } from "@/components/help/HowToUse";
 import { SessionHistory } from "@/components/sessions/SessionHistory";
-import { Settings, History, Sun, Moon, Timer, LayoutGrid, Volume2, VolumeOff, MoreVertical, BookOpen, Info, Check } from "lucide-react";
+import { Settings, History, Sun, Moon, Timer, LayoutGrid, Volume2, VolumeOff, MoreVertical, BookOpen, Info, Check, Cloud, CloudOff, RefreshCw, Loader2, LogOut } from "lucide-react";
 import type { Session, UserSettings } from "@/lib/storage";
 import type { Page } from "@/App";
+import type { GoogleAuthState } from "@/hooks/useGoogleAuth";
+import type { SyncState } from "@/hooks/useSync";
 import { cn } from "@/lib/utils";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
@@ -44,6 +46,8 @@ interface NavbarProps {
   onToggleTheme: () => void;
   silentMode: boolean;
   onToggleSilentMode: () => void;
+  googleAuth: GoogleAuthState;
+  sync: SyncState;
 }
 
 export function Navbar({
@@ -61,6 +65,8 @@ export function Navbar({
   onToggleTheme,
   silentMode,
   onToggleSilentMode,
+  googleAuth,
+  sync,
 }: NavbarProps) {
   const { t, i18n } = useTranslation();
   const [settingsOpen, setSettingsOpen] = useState(false);
@@ -105,6 +111,21 @@ export function Navbar({
           </div>
         </div>
 
+        <div className="flex items-center gap-1">
+          {googleAuth.isSignedIn && (
+            <div className="flex items-center" title={sync.lastSyncedAt ? t("sync.lastSync", { time: new Date(sync.lastSyncedAt).toLocaleTimeString() }) : undefined}>
+              {sync.status === "syncing" ? (
+                <Loader2 className="h-4 w-4 text-muted-foreground animate-spin" />
+              ) : sync.status === "success" ? (
+                <Cloud className="h-4 w-4 text-green-500" />
+              ) : sync.status === "error" ? (
+                <CloudOff className="h-4 w-4 text-destructive" />
+              ) : (
+                <Cloud className="h-4 w-4 text-muted-foreground" />
+              )}
+            </div>
+          )}
+
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button variant="ghost" size="icon">
@@ -133,6 +154,64 @@ export function Navbar({
               {theme === "dark" ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
               {theme === "dark" ? t("navbar.lightTheme") : t("navbar.darkTheme")}
             </DropdownMenuItem>
+
+            <DropdownMenuSeparator />
+
+            {!googleAuth.isSignedIn ? (
+              <DropdownMenuItem
+                onSelect={(e) => {
+                  e.preventDefault();
+                  googleAuth.signIn();
+                }}
+                disabled={googleAuth.isLoading}
+              >
+                <Cloud className="h-4 w-4" />
+                {googleAuth.isLoading ? t("sync.connecting") : t("sync.connectGoogle")}
+              </DropdownMenuItem>
+            ) : (
+              <>
+                <DropdownMenuItem
+                  onSelect={(e) => {
+                    e.preventDefault();
+                    sync.syncNow();
+                  }}
+                  disabled={sync.status === "syncing"}
+                >
+                  {sync.status === "syncing" ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : sync.status === "success" ? (
+                    <Check className="h-4 w-4 text-green-500" />
+                  ) : sync.status === "error" ? (
+                    <CloudOff className="h-4 w-4 text-destructive" />
+                  ) : (
+                    <RefreshCw className="h-4 w-4" />
+                  )}
+                  {sync.status === "syncing"
+                    ? t("sync.syncing")
+                    : sync.status === "success"
+                      ? t("sync.synced")
+                      : sync.status === "error"
+                        ? t("sync.error")
+                        : t("sync.syncNow")}
+                </DropdownMenuItem>
+                {sync.lastSyncedAt && (
+                  <div className="px-2 py-1 text-xs text-muted-foreground">
+                    {t("sync.lastSync", { time: new Date(sync.lastSyncedAt).toLocaleTimeString() })}
+                  </div>
+                )}
+                {googleAuth.email && (
+                  <div className="px-2 py-1 text-xs text-muted-foreground truncate max-w-48">
+                    {googleAuth.email}
+                  </div>
+                )}
+                <DropdownMenuItem onSelect={() => googleAuth.signOut()}>
+                  <LogOut className="h-4 w-4" />
+                  {t("sync.disconnect")}
+                </DropdownMenuItem>
+              </>
+            )}
+
+            <DropdownMenuSeparator />
 
             <DropdownMenuSub>
               <DropdownMenuSubTrigger>
@@ -167,6 +246,7 @@ export function Navbar({
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
+        </div>
 
         {/* Dialogs rendered outside the dropdown */}
         <TimerSettings

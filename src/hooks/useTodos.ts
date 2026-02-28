@@ -1,5 +1,5 @@
-import { useState, useCallback } from "react";
-import { getTodos, saveTodos, generateId, type Todo, type EisenhowerQuadrant } from "@/lib/storage";
+import { useState, useCallback, useEffect } from "react";
+import { getTodos, saveTodos, generateId, addDeletedTodoId, type Todo, type EisenhowerQuadrant } from "@/lib/storage";
 
 export type { Todo } from "@/lib/storage";
 export type { EisenhowerQuadrant } from "@/lib/storage";
@@ -9,6 +9,7 @@ export function useTodos() {
 
   const addTodo = useCallback((content: string, estimationMinutes: number, quadrant: EisenhowerQuadrant | null = null) => {
     setTodos(prev => {
+      const now = new Date().toISOString();
       const updated = [
         {
           id: generateId(),
@@ -16,9 +17,10 @@ export function useTodos() {
           estimationMinutes,
           timeSpentMinutes: 0,
           done: false,
-          createdAt: new Date().toISOString(),
+          createdAt: now,
           completedAt: null,
           quadrant,
+          updatedAt: now,
         },
         ...prev,
       ];
@@ -28,6 +30,7 @@ export function useTodos() {
   }, []);
 
   const deleteTodo = useCallback((todoId: string) => {
+    addDeletedTodoId(todoId);
     setTodos(prev => {
       const updated = prev.filter((t) => t.id !== todoId);
       saveTodos(updated);
@@ -37,8 +40,9 @@ export function useTodos() {
 
   const trackTime = useCallback((todoId: string, minutes: number) => {
     setTodos(prev => {
+      const now = new Date().toISOString();
       const updated = prev.map((t) =>
-        t.id === todoId ? { ...t, timeSpentMinutes: t.timeSpentMinutes + minutes } : t,
+        t.id === todoId ? { ...t, timeSpentMinutes: t.timeSpentMinutes + minutes, updatedAt: now } : t,
       );
       saveTodos(updated);
       return updated;
@@ -47,8 +51,9 @@ export function useTodos() {
 
   const toggleDone = useCallback((todoId: string, done: boolean) => {
     setTodos(prev => {
+      const now = new Date().toISOString();
       const updated = prev.map((t) =>
-        t.id === todoId ? { ...t, done, completedAt: done ? new Date().toISOString() : null } : t,
+        t.id === todoId ? { ...t, done, completedAt: done ? now : null, updatedAt: now } : t,
       );
       saveTodos(updated);
       return updated;
@@ -57,8 +62,9 @@ export function useTodos() {
 
   const updateTodo = useCallback((todoId: string, patch: Partial<Pick<Todo, "content" | "estimationMinutes" | "quadrant">>) => {
     setTodos(prev => {
+      const now = new Date().toISOString();
       const updated = prev.map((t) =>
-        t.id === todoId ? { ...t, ...patch } : t,
+        t.id === todoId ? { ...t, ...patch, updatedAt: now } : t,
       );
       saveTodos(updated);
       return updated;
@@ -68,6 +74,13 @@ export function useTodos() {
   const refreshTodos = useCallback(() => {
     setTodos(getTodos());
   }, []);
+
+  // Auto-refresh when sync completes
+  useEffect(() => {
+    const handler = () => refreshTodos();
+    window.addEventListener("eisenmate-sync-complete", handler);
+    return () => window.removeEventListener("eisenmate-sync-complete", handler);
+  }, [refreshTodos]);
 
   return { todos, loading: false, addTodo, deleteTodo, trackTime, toggleDone, updateTodo, refreshTodos };
 }

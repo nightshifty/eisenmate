@@ -2,12 +2,14 @@ import { groupByDay } from "./sessions";
 import type { Session } from "@/lib/storage";
 
 function makeSession(overrides: Partial<Session> = {}): Session {
+  const completedAt = overrides.completedAt ?? new Date().toISOString();
   return {
     id: overrides.id ?? "s-1",
     todoId: overrides.todoId ?? null,
     todoContent: overrides.todoContent ?? "Test task",
     durationMinutes: overrides.durationMinutes ?? 25,
-    completedAt: overrides.completedAt ?? new Date().toISOString(),
+    completedAt,
+    updatedAt: overrides.updatedAt ?? completedAt,
   };
 }
 

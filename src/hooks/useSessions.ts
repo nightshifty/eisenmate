@@ -1,5 +1,5 @@
-import { useState, useMemo, useCallback } from "react";
-import { getSessions, saveSessions, getTodos, saveTodos, generateId, type Session } from "@/lib/storage";
+import { useState, useMemo, useCallback, useEffect } from "react";
+import { getSessions, saveSessions, getTodos, saveTodos, generateId, addDeletedSessionId, type Session } from "@/lib/storage";
 
 export type { Session } from "@/lib/storage";
 
@@ -39,8 +39,9 @@ function subtractSessionTimesFromTodos(sessionsToRemove: Session[]): void {
 export function useSessions(onTodosChanged?: () => void) {
   const [sessions, setSessions] = useState<Session[]>(() => getSessions());
 
-  const addSession = useCallback((session: Omit<Session, "id">) => {
-    const updated = [{ ...session, id: generateId() }, ...getSessions()];
+  const addSession = useCallback((session: Omit<Session, "id" | "updatedAt">) => {
+    const now = new Date().toISOString();
+    const updated = [{ ...session, id: generateId(), updatedAt: now }, ...getSessions()];
     saveSessions(updated);
     setSessions(updated);
   }, []);
@@ -54,6 +55,7 @@ export function useSessions(onTodosChanged?: () => void) {
       onTodosChanged?.();
     }
 
+    addDeletedSessionId(sessionId);
     const updated = allSessions.filter((s) => s.id !== sessionId);
     saveSessions(updated);
     setSessions(updated);
@@ -65,6 +67,10 @@ export function useSessions(onTodosChanged?: () => void) {
     if (allSessions.length > 0) {
       subtractSessionTimesFromTodos(allSessions);
       onTodosChanged?.();
+      // Record tombstones for all deleted sessions
+      for (const session of allSessions) {
+        addDeletedSessionId(session.id);
+      }
     }
 
     saveSessions([]);
@@ -83,5 +89,16 @@ export function useSessions(onTodosChanged?: () => void) {
     };
   }, [sessions]);
 
-  return { sessions, todaySessions, todayMinutes, addSession, deleteSession, clearSessions };
+  const refreshSessions = useCallback(() => {
+    setSessions(getSessions());
+  }, []);
+
+  // Auto-refresh when sync completes
+  useEffect(() => {
+    const handler = () => refreshSessions();
+    window.addEventListener("eisenmate-sync-complete", handler);
+    return () => window.removeEventListener("eisenmate-sync-complete", handler);
+  }, [refreshSessions]);
+
+  return { sessions, todaySessions, todayMinutes, addSession, deleteSession, clearSessions, refreshSessions };
 }
